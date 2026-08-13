@@ -3,49 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MedQuiz Staging | بوابة الإدارة</title>
-    <!-- تضمين مكتبات Firebase (نسخة Compat لتناسب Vanilla JS) -->
+    <title>MedQuiz | بوابة المراجعين 🩺</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 2px solid #3b82f6; text-align: center; width: 90%; max-width: 400px; }
-        .btn-google { background: #ffffff; color: #000000; font-weight: bold; border: none; padding: 15px 20px; border-radius: 12px; font-size: 1.1rem; cursor: pointer; width: 100%; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.3s; }
-        .btn-google:hover { background: #f1f5f9; transform: translateY(-2px); }
-        .admin-emails { margin-top: 20px; font-size: 0.85rem; color: #94a3b8; line-height: 1.6; }
-        #dashboard-ui { display: none; width: 100%; padding: 20px; text-align: center; }
+        :root { --primary: #3b82f6; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --border: #e2e8f0; --success: #10b981; --error: #ef4444; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; line-height: 1.6; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: var(--card); border: 2px solid var(--border); border-radius: 15px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        input, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid var(--border); margin-bottom: 15px; font-family: inherit; font-size: 1rem; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; }
+        button:hover { opacity: 0.9; transform: translateY(-2px); }
+        .q-box { border-right: 5px solid var(--primary); background: #eff6ff; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        .ans-correct { background: #d1fae5; color: #065f46; padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 10px; border: 1px solid #10b981; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: var(--card); padding: 25px; border-radius: 15px; width: 100%; max-width: 600px; }
+        #app-ui { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- شاشة تسجيل الدخول -->
-    <div id="login-ui" class="login-card">
-        <h1 style="color: #3b82f6; margin-top: 0;">MedQuiz Staging</h1>
-        <h3 style="color: #cbd5e1; margin-bottom: 30px;">بوابة الإدارة المركزية 👑</h3>
-        
-        <button class="btn-google" onclick="signInWithGoogle()">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" height="20" alt="Google">
-            تسجيل الدخول كمدير
-        </button>
-        
-        <div class="admin-emails">
-            النظام محمي ومقفل.<br>لا يمكن الدخول إلا لحسابات  الإدارة المعتمدة.
+    <div class="container">
+        <!-- 1. شاشة تسجيل الدخول للمراجعين -->
+        <div id="login-ui" class="card" style="text-align: center; max-width: 400px; margin: 100px auto;">
+            <h2 style="color: var(--primary);">بوابة المراجعة والتدقيق 🔍</h2>
+            <p style="color: #64748b; font-weight: bold;">أدخل الـ ID الخاص بك للبدء</p>
+            <input type="text" id="reviewer-id-input" placeholder="اكتب الـ ID هنا..." style="text-align: center; font-weight: bold; font-size: 1.2rem;">
+            <button onclick="loginReviewer()" style="width: 100%;">دخول 🚀</button>
+            <p id="login-error" style="color: var(--error); margin-top: 10px; font-weight: bold; display: none;"></p>
+        </div>
+
+        <!-- 2. واجهة التطبيق الرئيسية (بعد الدخول) -->
+        <div id="app-ui">
+            <div class="card" style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; color: white; border-color: #1e293b;">
+                <div>
+                    <h3 style="margin: 0;">أهلاً بك، <span id="rev-name" style="color: #34d399;"></span> 👨‍⚕️</h3>
+                    <small>الرقم التعريفي: <span id="rev-id-display"></span></small>
+                </div>
+                <button onclick="logout()" style="background: var(--error);">تسجيل خروج</button>
+            </div>
+
+            <!-- مربع جلب المحاضرة -->
+            <div class="card">
+                <h3>📚 جلب محاضرة للمراجعة</h3>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="lec-id-input" placeholder="أدخل ID المحاضرة (مثال: CNS_Lec1)" style="margin: 0; direction: ltr;">
+                    <button onclick="fetchLecture()">تحميل الأسئلة 📥</button>
+                </div>
+            </div>
+
+            <!-- مكان عرض الأسئلة -->
+            <div id="questions-feed"></div>
         </div>
     </div>
 
-    <!-- شاشة لوحة التحكم (ستظهر فقط بعد الدخول الناجح) -->
-    <div id="dashboard-ui">
-        <h1 style="color: #10b981;">أهلاً بك يا دكتور في لوحة التحكم المركزية! ✅</h1>
-        <p>تم التحقق من هويتك بنجاح.</p>
-        <button onclick="logoutAdmin()" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold;">تسجيل الخروج</button>
-        
-        <!-- في الخطوة القادمة سنبني هنا شاشة الإحصائيات وإدارة المراجعين -->
+    <!-- 3. نافذة التعديل (Modal) -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <h3 style="color: var(--error); border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-top: 0;">✏️ اقتراح تعديل أو الإبلاغ عن خطأ</h3>
+            
+            <p style="font-weight: bold;">حدد الأجزاء التي تحتاج تعديل:</p>
+            <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
+                <label><input type="checkbox" id="chk-q" onchange="toggleEditField('edit-q-box')"> نص السؤال</label>
+                <label><input type="checkbox" id="chk-opts" onchange="toggleEditField('edit-opts-box')"> الاختيارات</label>
+                <label><input type="checkbox" id="chk-ans" onchange="toggleEditField('edit-ans-box')"> الإجابة الصحيحة</label>
+                <label><input type="checkbox" id="chk-exp" onchange="toggleEditField('edit-exp-box')"> الشرح والتفسير</label>
+            </div>
+
+            <div id="edit-q-box" style="display: none;">
+                <label style="font-weight:bold; color:var(--primary);">نص السؤال الجديد:</label>
+                <textarea id="new-q-text" rows="3"></textarea>
+            </div>
+            <div id="edit-opts-box" style="display: none;">
+                <label style="font-weight:bold; color:var(--primary);">الاختيارات الجديدة (كل اختيار في سطر):</label>
+                <textarea id="new-opts-text" rows="4"></textarea>
+            </div>
+            <div id="edit-ans-box" style="display: none;">
+                <label style="font-weight:bold; color:var(--primary);">الإجابة الصحيحة الدقيقة:</label>
+                <input type="text" id="new-ans-text">
+            </div>
+            <div id="edit-exp-box" style="display: none;">
+                <label style="font-weight:bold; color:var(--primary);">الشرح الجديد:</label>
+                <textarea id="new-exp-text" rows="3"></textarea>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="submitDraft()" style="flex: 2; background: var(--success);">إرسال التعديل للرقابة ✅</button>
+                <button onclick="closeModal()" style="flex: 1; background: #64748b;">إلغاء ✖</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        // إعدادات مشروعك الجديد
+        // إعدادات الفايربيز
         const firebaseConfig = {
             apiKey: "AIzaSyBMLTsWzlsIDmu7tLwZPafMo-hb4rJagIQ",
             authDomain: "medquiz-reviewer.firebaseapp.com",
@@ -54,49 +104,228 @@
             messagingSenderId: "262570274518",
             appId: "1:262570274518:web:636e1f568673dd3cdca377"
         };
-
-        // تهيئة Firebase
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
         const db = firebase.firestore();
-        const provider = new firebase.auth.GoogleAuthProvider();
 
-        // قائمة الإيميلات المصرح لها
-        const allowedEmails = [
-            "mahmoud01030382018@gmail.com",
-            "ma7moud01030382018@gmail.com",
-            "mahmoud01281288817@gmail.com",
-            "ma7moud01281288817@gmail.com"
-        ];
+        let currentReviewer = null;
+        let currentLectureId = null;
+        let activeQuestions = [];
+        let editingIndex = null;
 
-        // مراقبة حالة تسجيل الدخول
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                // التحقق من أن الإيميل موجود في القائمة
-                if (allowedEmails.includes(user.email)) {
-                    document.getElementById('login-ui').style.display = 'none';
-                    document.getElementById('dashboard-ui').style.display = 'block';
-                } else {
-                    alert("🚫 عذراً، هذا الحساب غير مصرح له بدخول لوحة الإدارة.");
-                    auth.signOut(); // طرد فوري
-                }
-            } else {
-                document.getElementById('login-ui').style.display = 'block';
-                document.getElementById('dashboard-ui').style.display = 'none';
+        // توليد بصمة الجهاز (Device UUID)
+        function getDeviceUUID() {
+            let uuid = localStorage.getItem('mq_reviewer_device_uuid');
+            if (!uuid) {
+                uuid = 'dev-' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+                localStorage.setItem('mq_reviewer_device_uuid', uuid);
             }
-        });
+            return uuid;
+        }
 
-        // دالة تسجيل الدخول
-        function signInWithGoogle() {
-            auth.signInWithPopup(provider).catch((error) => {
-                console.error("Login Error:", error);
-                alert("حدث خطأ أثناء تسجيل الدخول!");
+        // التحقق التلقائي عند فتح الصفحة
+        window.onload = async () => {
+            const savedId = localStorage.getItem('mq_reviewer_id');
+            if (savedId) {
+                document.getElementById('reviewer-id-input').value = savedId;
+                loginReviewer();
+            }
+        };
+
+        // تسجيل الدخول بالـ ID
+        async function loginReviewer() {
+            const revId = document.getElementById('reviewer-id-input').value.trim();
+            const errEl = document.getElementById('login-error');
+            if (!revId) return;
+
+            try {
+                const docRef = await db.collection('reviewers').doc(revId).get();
+                if (!docRef.exists) {
+                    errEl.innerText = "❌ الـ ID غير صحيح أو غير موجود."; errEl.style.display = 'block'; return;
+                }
+
+                const data = docRef.data();
+                const myDevice = getDeviceUUID();
+
+                // حماية الأجهزة (إذا كان مسجل بجهاز آخر يرفض الدخول)
+                if (data.device_id && data.device_id !== myDevice) {
+                    errEl.innerText = "⛔ هذا الحساب مسجل ومقفل على جهاز آخر."; errEl.style.display = 'block'; return;
+                }
+
+                // تسجيل الجهاز إذا كانت أول مرة يدخل
+                if (!data.device_id) {
+                    await db.collection('reviewers').doc(revId).update({ device_id: myDevice });
+                }
+
+                // الدخول ناجح
+                currentReviewer = { id: revId, name: data.name };
+                localStorage.setItem('mq_reviewer_id', revId);
+                
+                document.getElementById('login-ui').style.display = 'none';
+                document.getElementById('app-ui').style.display = 'block';
+                document.getElementById('rev-name').innerText = data.name;
+                document.getElementById('rev-id-display').innerText = revId;
+
+                startIdleTracker(); // تشغيل متتبع الوقت
+            } catch (error) {
+                console.error(error);
+                errEl.innerText = "❌ حدث خطأ في الاتصال بالسيرفر."; errEl.style.display = 'block';
+            }
+        }
+
+        // جلب المحاضرة
+        async function fetchLecture() {
+            const lecId = document.getElementById('lec-id-input').value.trim();
+            if (!lecId) return alert('أدخل ID المحاضرة');
+
+            const feed = document.getElementById('questions-feed');
+            feed.innerHTML = '<h3 style="text-align:center; color:var(--primary);">⏳ جاري التحميل...</h3>';
+
+            try {
+                const docRef = await db.collection('lectures').doc(lecId).get();
+                if (!docRef.exists) {
+                    feed.innerHTML = '<h3 style="color:var(--error); text-align:center;">المحاضرة غير موجودة!</h3>'; return;
+                }
+
+                currentLectureId = lecId;
+                activeQuestions = docRef.data().questions || [];
+                renderQuestions();
+
+            } catch (error) {
+                feed.innerHTML = '<h3 style="color:var(--error); text-align:center;">حدث خطأ! تأكد من القواعد الأمنية.</h3>';
+            }
+        }
+
+        // رسم الأسئلة
+        function renderQuestions() {
+            const feed = document.getElementById('questions-feed');
+            feed.innerHTML = `<h3 style="border-bottom:2px solid var(--border); padding-bottom:10px;">📋 أسئلة المحاضرة (${activeQuestions.length})</h3>`;
+
+            activeQuestions.forEach((q, index) => {
+                const optsText = q.options ? q.options.map(o => `<li>${o}</li>`).join('') : 'لا يوجد خيارات';
+                const card = document.createElement('div');
+                card.className = 'card q-box';
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                        <span style="font-weight:bold; color:var(--primary);">سؤال ${index + 1}</span>
+                        <button onclick="openEditModal(${index})" style="background:var(--error); padding:6px 12px; font-size:0.9rem;">⚠️ إبلاغ / تعديل</button>
+                    </div>
+                    <div style="font-size:1.1rem; font-weight:bold; margin-bottom:15px; direction:ltr; text-align:left;">${q.q}</div>
+                    <ul style="direction:ltr; text-align:left; color:#475569;">${optsText}</ul>
+                    <div class="ans-correct" style="direction:ltr; text-align:left;">✅ Answer: ${q.a || 'غير محدد'}</div>
+                    ${q.d ? `<div style="background:#f1f5f9; padding:10px; border-radius:8px; font-size:0.95rem; border-right:4px solid #f59e0b;"><b>💡 التفسير:</b><br>${q.d}</div>` : ''}
+                `;
+                feed.appendChild(card);
             });
         }
 
-        // دالة تسجيل الخروج
-        function logoutAdmin() {
-            auth.signOut();
+        // ================== نظام التعديل (Drafts) ==================
+        function toggleEditField(id) {
+            const el = document.getElementById(id);
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function openEditModal(index) {
+            editingIndex = index;
+            const q = activeQuestions[index];
+            
+            // تصفير الخانات
+            document.querySelectorAll('#edit-modal input[type="checkbox"]').forEach(c => c.checked = false);
+            document.getElementById('edit-q-box').style.display = 'none';
+            document.getElementById('edit-opts-box').style.display = 'none';
+            document.getElementById('edit-ans-box').style.display = 'none';
+            document.getElementById('edit-exp-box').style.display = 'none';
+
+            // تعبئة البيانات القديمة
+            document.getElementById('new-q-text').value = q.q || '';
+            document.getElementById('new-opts-text').value = q.options ? q.options.join('\n') : '';
+            document.getElementById('new-ans-text').value = q.a || '';
+            document.getElementById('new-exp-text').value = q.d || '';
+
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('edit-modal').style.display = 'none'; }
+
+        async function submitDraft() {
+            const q = activeQuestions[editingIndex];
+            
+            // تجميع التعديلات (سيتم إرسال ما تم تحديده فقط، والباقي نرسله كما هو ليعرف المدير السؤال كاملاً)
+            const draftData = {
+                lecture_id: currentLectureId,
+                question_index: editingIndex,
+                reviewer_id: currentReviewer.id,
+                reviewer_name: currentReviewer.name,
+                status: 'pending',
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                
+                original_q: q.q,
+                new_q: document.getElementById('chk-q').checked ? document.getElementById('new-q-text').value : q.q,
+                
+                original_options: q.options,
+                new_options: document.getElementById('chk-opts').checked ? document.getElementById('new-opts-text').value.split('\n').filter(o=>o.trim()) : q.options,
+                
+                original_ans: q.a,
+                new_ans: document.getElementById('chk-ans').checked ? document.getElementById('new-ans-text').value : q.a,
+                
+                original_exp: q.d || '',
+                new_exp: document.getElementById('chk-exp').checked ? document.getElementById('new-exp-text').value : (q.d || ''),
+            };
+
+            // التحقق من أنه اختار شيئاً لتعديله
+            if (!document.getElementById('chk-q').checked && !document.getElementById('chk-opts').checked && !document.getElementById('chk-ans').checked && !document.getElementById('chk-exp').checked) {
+                return alert("الرجاء تحديد جزء واحد على الأقل للتعديل!");
+            }
+
+            try {
+                // إرسال المسودة
+                await db.collection('question_drafts').add(draftData);
+                
+                // زيادة عداد إنجازات المراجع (كمكافأة له)
+                await db.collection('reviewers').doc(currentReviewer.id).update({
+                    edits_submitted: firebase.firestore.FieldValue.increment(1)
+                });
+
+                alert("✅ تم إرسال التعديل للإدارة بنجاح. شكراً لمجهودك!");
+                closeModal();
+            } catch (e) {
+                console.error(e);
+                alert("❌ حدث خطأ أثناء الإرسال.");
+            }
+        }
+
+        // ================== متتبع الوقت (Idle Tracker) ==================
+        let activeSeconds = 0;
+        let isIdle = false;
+        let idleTimer;
+
+        function resetIdleTimer() {
+            isIdle = false;
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(() => { isIdle = true; }, 60000); // يعتبر خاملاً بعد دقيقة من عدم الحركة
+        }
+
+        function startIdleTracker() {
+            document.body.addEventListener('mousemove', resetIdleTimer);
+            document.body.addEventListener('keypress', resetIdleTimer);
+            document.body.addEventListener('touchstart', resetIdleTimer);
+            resetIdleTimer();
+
+            // حفظ الوقت في الداتا بيز كل دقيقة
+            setInterval(async () => {
+                if (!isIdle && currentReviewer) {
+                    activeSeconds += 60;
+                    try {
+                        await db.collection('reviewers').doc(currentReviewer.id).update({
+                            time_spent_minutes: firebase.firestore.FieldValue.increment(1)
+                        });
+                    } catch(e) {}
+                }
+            }, 60000);
+        }
+
+        function logout() {
+            localStorage.removeItem('mq_reviewer_id');
+            location.reload();
         }
     </script>
 </body>
