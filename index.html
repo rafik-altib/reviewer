@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedQuiz Staging | بوابة الإدارة</title>
+    <!-- تضمين مكتبات Firebase (نسخة Compat لتناسب Vanilla JS) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-card { background: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 2px solid #3b82f6; text-align: center; width: 90%; max-width: 400px; }
+        .btn-google { background: #ffffff; color: #000000; font-weight: bold; border: none; padding: 15px 20px; border-radius: 12px; font-size: 1.1rem; cursor: pointer; width: 100%; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.3s; }
+        .btn-google:hover { background: #f1f5f9; transform: translateY(-2px); }
+        .admin-emails { margin-top: 20px; font-size: 0.85rem; color: #94a3b8; line-height: 1.6; }
+        #dashboard-ui { display: none; width: 100%; padding: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="login-ui" class="login-card">
+        <h1 style="color: #3b82f6; margin-top: 0;">MedQuiz Staging</h1>
+        <h3 style="color: #cbd5e1; margin-bottom: 30px;">بوابة الإدارة المركزية 👑</h3>
+        
+        <button class="btn-google" onclick="signInWithGoogle()">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" height="20" alt="Google">
+            تسجيل الدخول كمدير
+        </button>
+        
+        <div class="admin-emails">
+            النظام محمي ومقفل.<br>لا يمكن الدخول إلا لحسابات الإدارة المعتمدة.
+        </div>
+    </div>
+
+    <!-- شاشة لوحة التحكم (ستظهر فقط بعد الدخول الناجح) -->
+    <div id="dashboard-ui">
+        <h1 style="color: #10b981;">أهلاً بك يا دكتور في لوحة التحكم المركزية! ✅</h1>
+        <p>تم التحقق من هويتك بنجاح.</p>
+        <button onclick="logoutAdmin()" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold;">تسجيل الخروج</button>
+        
+        <!-- في الخطوة القادمة سنبني هنا شاشة الإحصائيات وإدارة المراجعين -->
+    </div>
+
+    <script>
+        // إعدادات مشروعك الجديد
+        const firebaseConfig = {
+            apiKey: "AIzaSyBMLTsWzlsIDmu7tLwZPafMo-hb4rJagIQ",
+            authDomain: "medquiz-reviewer.firebaseapp.com",
+            projectId: "medquiz-reviewer",
+            storageBucket: "medquiz-reviewer.firebasestorage.app",
+            messagingSenderId: "262570274518",
+            appId: "1:262570274518:web:636e1f568673dd3cdca377"
+        };
+
+        // تهيئة Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const provider = new firebase.auth.GoogleAuthProvider();
+
+        // قائمة الإيميلات المصرح لها
+        const allowedEmails = [
+            "mahmoud01030382018@gmail.com",
+            "ma7moud01030382018@gmail.com",
+            "mahmoud01281288817@gmail.com",
+            "ma7moud01281288817@gmail.com"
+        ];
+
+        // مراقبة حالة تسجيل الدخول
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // التحقق من أن الإيميل موجود في القائمة
+                if (allowedEmails.includes(user.email)) {
+                    document.getElementById('login-ui').style.display = 'none';
+                    document.getElementById('dashboard-ui').style.display = 'block';
+                } else {
+                    alert("🚫 عذراً، هذا الحساب غير مصرح له بدخول لوحة الإدارة.");
+                    auth.signOut(); // طرد فوري
+                }
+            } else {
+                document.getElementById('login-ui').style.display = 'block';
+                document.getElementById('dashboard-ui').style.display = 'none';
+            }
+        });
+
+        // دالة تسجيل الدخول
+        function signInWithGoogle() {
+            auth.signInWithPopup(provider).catch((error) => {
+                console.error("Login Error:", error);
+                alert("حدث خطأ أثناء تسجيل الدخول!");
+            });
+        }
+
+        // دالة تسجيل الخروج
+        function logoutAdmin() {
+            auth.signOut();
+        }
+    </script>
+</body>
+</html>
