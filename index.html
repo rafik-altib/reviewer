@@ -3,53 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MedQuiz | بوابة المراجعين 🩺</title>
+    <title>MedQuiz | بوابة أبطال المراجعة 🦸‍♂️</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { --primary: #3b82f6; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --border: #e2e8f0; --success: #10b981; --error: #ef4444; }
+        :root { --primary: #3b82f6; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --border: #e2e8f0; --success: #10b981; --error: #ef4444; --accent: #f59e0b; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; line-height: 1.6; }
         .container { max-width: 800px; margin: 0 auto; }
-        .card { background: var(--card); border: 2px solid var(--border); border-radius: 15px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        input, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 2px solid var(--border); margin-bottom: 15px; font-family: inherit; font-size: 1rem; box-sizing: border-box; }
-        button { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; }
-        button:hover { opacity: 0.9; transform: translateY(-2px); }
-        .q-box { border-right: 5px solid var(--primary); background: #eff6ff; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
-        .ans-correct { background: #d1fae5; color: #065f46; padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 10px; border: 1px solid #10b981; }
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; overflow-y: auto; padding: 20px; box-sizing: border-box; }
-        .modal-content { background: var(--card); padding: 25px; border-radius: 15px; width: 100%; max-width: 600px; }
-        #app-ui { display: none; }
+        .card { background: var(--card); border: 2px solid var(--border); border-radius: 20px; padding: 25px; margin-bottom: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        input, textarea, select { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid var(--border); margin-bottom: 15px; font-family: inherit; font-size: 1rem; box-sizing: border-box; transition: 0.3s; }
+        input:focus, textarea:focus, select:focus { border-color: var(--primary); outline: none; }
+        button { background: var(--primary); color: white; border: none; padding: 15px 20px; border-radius: 12px; font-weight: 900; cursor: pointer; font-size: 1.1rem; transition: 0.2s; box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3); }
+        button:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(59, 130, 246, 0.4); }
+        .q-box { border-right: 6px solid var(--primary); background: #eff6ff; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
+        .ans-correct { background: #d1fae5; color: #065f46; padding: 12px; border-radius: 10px; font-weight: bold; margin-bottom: 10px; border: 1px dashed #10b981; }
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); display: none; justify-content: center; align-items: center; z-index: 1000; overflow-y: auto; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px); }
+        .modal-content { background: var(--card); padding: 30px; border-radius: 25px; width: 100%; max-width: 650px; position: relative; border: 3px solid var(--primary); }
+        .badge { background: var(--accent); color: #fff; padding: 5px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; }
+        .lec-item { background: #fff; border: 2px solid var(--border); padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .lec-item:hover { border-color: var(--primary); background: #eff6ff; }
+        #app-ui, #hierarchy-ui { display: none; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- 1. شاشة تسجيل الدخول للمراجعين -->
-        <div id="login-ui" class="card" style="text-align: center; max-width: 400px; margin: 100px auto;">
-            <h2 style="color: var(--primary);">بوابة المراجعة والتدقيق 🔍</h2>
-            <p style="color: #64748b; font-weight: bold;">أدخل الـ ID الخاص بك للبدء</p>
-            <input type="text" id="reviewer-id-input" placeholder="اكتب الـ ID هنا..." style="text-align: center; font-weight: bold; font-size: 1.2rem;">
-            <button onclick="loginReviewer()" style="width: 100%;">دخول 🚀</button>
-            <p id="login-error" style="color: var(--error); margin-top: 10px; font-weight: bold; display: none;"></p>
+        <!-- 1. شاشة الدخول -->
+        <div id="login-ui" class="card" style="text-align: center; max-width: 450px; margin: 10vh auto; border-color: var(--primary);">
+            <div style="font-size: 4rem; margin-bottom: 10px;">🦸‍♂️</div>
+            <h2 style="color: var(--primary); margin-top: 0;">بوابة أبطال المراجعة</h2>
+            <p style="color: #64748b; font-weight: bold;">أهلاً بيك يا دكتور! حط الـ ID بتاعك عشان نبدأ ننضف الأسئلة ✨</p>
+            <input type="text" id="reviewer-id-input" placeholder="اكتب الـ ID هنا..." style="text-align: center; font-weight: 900; font-size: 1.3rem; letter-spacing: 2px;">
+            <button onclick="loginReviewer()" style="width: 100%;">يلا بينا 🚀</button>
+            <p id="login-error" style="color: var(--error); margin-top: 15px; font-weight: bold; display: none;"></p>
         </div>
 
-        <!-- 2. واجهة التطبيق الرئيسية (بعد الدخول) -->
+        <!-- 2. واجهة التطبيق الرئيسية -->
         <div id="app-ui">
-            <div class="card" style="display: flex; justify-content: space-between; align-items: center; background: #1e293b; color: white; border-color: #1e293b;">
+            <!-- شريط الترحيب والتحفيز -->
+            <div class="card" style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #1e293b, #0f172a); color: white; border: none;">
                 <div>
-                    <h3 style="margin: 0;">أهلاً بك، <span id="rev-name" style="color: #34d399;"></span> 👨‍⚕️</h3>
-                    <small>الرقم التعريفي: <span id="rev-id-display"></span></small>
+                    <h3 style="margin: 0; font-size: 1.4rem;">منورنا يا <span id="rev-name" style="color: #34d399;"></span> ✨</h3>
+                    <div style="margin-top: 8px;">
+                        <span class="badge" id="rev-year"></span>
+                        <span class="badge" style="background: #10b981;">أنقذت <span id="rev-edits">0</span> سؤال 🎯</span>
+                    </div>
                 </div>
-                <button onclick="logout()" style="background: var(--error);">تسجيل خروج</button>
+                <button onclick="logout()" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; box-shadow: none; border: 1px solid #ef4444;">خروج</button>
             </div>
 
-            <!-- مربع جلب المحاضرة -->
-            <div class="card">
-                <h3>📚 جلب محاضرة للمراجعة</h3>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="lec-id-input" placeholder="أدخل ID المحاضرة (مثال: CNS_Lec1)" style="margin: 0; direction: ltr;">
-                    <button onclick="fetchLecture()">تحميل الأسئلة 📥</button>
-                </div>
+            <!-- شجرة المواد (Hierarchy) -->
+            <div id="hierarchy-ui" class="card" style="border-color: #8b5cf6;">
+                <h3 style="color: #8b5cf6; margin-top: 0;">📚 اختار الموديول بتاعك:</h3>
+                <select id="module-select" onchange="loadLecturesForModule()">
+                    <option value="" disabled selected>-- اختار الموديول من هنا --</option>
+                </select>
+                <div id="lectures-list" style="margin-top: 20px;"></div>
             </div>
 
             <!-- مكان عرض الأسئلة -->
@@ -60,42 +69,59 @@
     <!-- 3. نافذة التعديل (Modal) -->
     <div id="edit-modal" class="modal">
         <div class="modal-content">
-            <h3 style="color: var(--error); border-bottom: 2px solid var(--border); padding-bottom: 10px; margin-top: 0;">✏️ اقتراح تعديل أو الإبلاغ عن خطأ</h3>
+            <h2 style="color: var(--primary); margin-top: 0; text-align: center;">🛠️ ظبط السؤال براحتك</h2>
             
-            <p style="font-weight: bold;">حدد الأجزاء التي تحتاج تعديل:</p>
-            <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                <label><input type="checkbox" id="chk-q" onchange="toggleEditField('edit-q-box')"> نص السؤال</label>
-                <label><input type="checkbox" id="chk-opts" onchange="toggleEditField('edit-opts-box')"> الاختيارات</label>
-                <label><input type="checkbox" id="chk-ans" onchange="toggleEditField('edit-ans-box')"> الإجابة الصحيحة</label>
-                <label><input type="checkbox" id="chk-exp" onchange="toggleEditField('edit-exp-box')"> الشرح والتفسير</label>
+            <div id="edit-step-1">
+                <p style="font-weight: bold; font-size: 1.1rem;">إيه المشكلة اللي هنا؟ (اختار اللي محتاج يتعدل)</p>
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px dashed #cbd5e1;">
+                    <label style="font-weight: bold; cursor: pointer;"><input type="checkbox" id="chk-q" onchange="toggleEditField('edit-q-box')"> 📝 رأس السؤال</label>
+                    <label style="font-weight: bold; cursor: pointer;"><input type="checkbox" id="chk-opts" onchange="toggleEditField('edit-opts-box')"> 🔠 الاختيارات</label>
+                    <label style="font-weight: bold; cursor: pointer;"><input type="checkbox" id="chk-ans" onchange="toggleEditField('edit-ans-box')"> ✅ الإجابة الصح</label>
+                    <label style="font-weight: bold; cursor: pointer;"><input type="checkbox" id="chk-exp" onchange="toggleEditField('edit-exp-box')"> 💡 الشرح</label>
+                </div>
+
+                <div id="edit-q-box" style="display: none;">
+                    <label style="font-weight:bold; color:var(--primary);">نص السؤال الجديد:</label>
+                    <textarea id="new-q-text" rows="2"></textarea>
+                </div>
+                <div id="edit-opts-box" style="display: none;">
+                    <label style="font-weight:bold; color:var(--primary);">الاختيارات الجديدة (كل اختيار في سطر):</label>
+                    <textarea id="new-opts-text" rows="4"></textarea>
+                </div>
+                <div id="edit-ans-box" style="display: none;">
+                    <label style="font-weight:bold; color:var(--primary);">الإجابة الصحيحة (لازم تطابق الاختيار بالحرف):</label>
+                    <input type="text" id="new-ans-text">
+                </div>
+                <div id="edit-exp-box" style="display: none;">
+                    <label style="font-weight:bold; color:var(--primary);">الشرح والتفسير (علشان زمايلك يفهموا):</label>
+                    <textarea id="new-exp-text" rows="3"></textarea>
+                </div>
+
+                <label style="font-weight:bold; color:var(--accent); display:block; margin-top: 15px;">✍️ ليه عدلت السؤال؟ (عشان الأدمن يوافق بسرعة - اختياري):</label>
+                <input type="text" id="edit-reason" placeholder="مثال: الإجابة اتغيرت في كتاب الكلية صفحة 40...">
+
+                <div style="display: flex; gap: 10px; margin-top: 25px;">
+                    <button onclick="previewDraft()" style="flex: 2; background: var(--primary);">يلا نشوف المعاينة 👀</button>
+                    <button onclick="closeModal()" style="flex: 1; background: #64748b; box-shadow: none;">إلغاء ✖</button>
+                </div>
             </div>
 
-            <div id="edit-q-box" style="display: none;">
-                <label style="font-weight:bold; color:var(--primary);">نص السؤال الجديد:</label>
-                <textarea id="new-q-text" rows="3"></textarea>
-            </div>
-            <div id="edit-opts-box" style="display: none;">
-                <label style="font-weight:bold; color:var(--primary);">الاختيارات الجديدة (كل اختيار في سطر):</label>
-                <textarea id="new-opts-text" rows="4"></textarea>
-            </div>
-            <div id="edit-ans-box" style="display: none;">
-                <label style="font-weight:bold; color:var(--primary);">الإجابة الصحيحة الدقيقة:</label>
-                <input type="text" id="new-ans-text">
-            </div>
-            <div id="edit-exp-box" style="display: none;">
-                <label style="font-weight:bold; color:var(--primary);">الشرح الجديد:</label>
-                <textarea id="new-exp-text" rows="3"></textarea>
+            <!-- شاشة التأكيد والمعاينة -->
+            <div id="edit-step-2" style="display: none;">
+                <h3 style="color: var(--success); text-align: center;">شكل السؤال بعد لمستك السحرية ✨</h3>
+                <div id="preview-box" style="background: #f0fdf4; border: 2px dashed #10b981; padding: 15px; border-radius: 12px; margin-bottom: 20px; direction: ltr; text-align: left;"></div>
+                
+                <h3 style="text-align: center; color: var(--text);">إيه رأيك؟ كدا تمام ولا نعدل حاجة تاني؟ 🤔</h3>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button onclick="submitDraft()" style="flex: 2; background: var(--success);">كدا فل جداً، ابعت 🚀</button>
+                    <button onclick="backToEdit()" style="flex: 2; background: var(--accent);">لا ثانية، هعدل تاني ✏️</button>
+                </div>
             </div>
 
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button onclick="submitDraft()" style="flex: 2; background: var(--success);">إرسال التعديل للرقابة ✅</button>
-                <button onclick="closeModal()" style="flex: 1; background: #64748b;">إلغاء ✖</button>
-            </div>
         </div>
     </div>
 
     <script>
-        // إعدادات الفايربيز
         const firebaseConfig = {
             apiKey: "AIzaSyBMLTsWzlsIDmu7tLwZPafMo-hb4rJagIQ",
             authDomain: "medquiz-reviewer.firebaseapp.com",
@@ -107,118 +133,167 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // خريطة الموديولات للسنين
+        const curriculum = {
+            "الفرقة الأولى": ["F1", "F2", "F3", "MSK"],
+            "الفرقة الثانية": ["Blood", "GIT", "Reproductive", "CNS", "special scenes", "Renal"],
+            "الفرقة الثالثة": ["Respiratory", "Cardiovascular", "Endocrine", "Medicine I", "Surgery I"],
+            "الفرقة الرابعة": ["Medicine II", "Surgery II", "PHC/Ped", "PHC/OBS/GYN"]
+        };
+
         let currentReviewer = null;
         let currentLectureId = null;
         let activeQuestions = [];
         let editingIndex = null;
 
-        // توليد بصمة الجهاز (Device UUID)
         function getDeviceUUID() {
-            let uuid = localStorage.getItem('mq_reviewer_device_uuid');
-            if (!uuid) {
-                uuid = 'dev-' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-                localStorage.setItem('mq_reviewer_device_uuid', uuid);
-            }
+            let uuid = localStorage.getItem('mq_rev_uuid');
+            if (!uuid) { uuid = 'dev-' + Math.random().toString(36).substr(2, 9); localStorage.setItem('mq_rev_uuid', uuid); }
             return uuid;
         }
 
-        // التحقق التلقائي عند فتح الصفحة
         window.onload = async () => {
-            const savedId = localStorage.getItem('mq_reviewer_id');
+            const savedId = localStorage.getItem('mq_rev_id');
             if (savedId) {
                 document.getElementById('reviewer-id-input').value = savedId;
-                loginReviewer();
+                await loginReviewer();
             }
         };
 
-        // تسجيل الدخول بالـ ID
         async function loginReviewer() {
             const revId = document.getElementById('reviewer-id-input').value.trim();
             const errEl = document.getElementById('login-error');
             if (!revId) return;
 
+            document.querySelector('#login-ui button').innerText = "جاري التحقق... ⏳";
+
             try {
                 const docRef = await db.collection('reviewers').doc(revId).get();
                 if (!docRef.exists) {
-                    errEl.innerText = "❌ الـ ID غير صحيح أو غير موجود."; errEl.style.display = 'block'; return;
+                    errEl.innerText = "❌ الـ ID مش مظبوط يا دكتور، اتأكد منه."; errEl.style.display = 'block'; 
+                    document.querySelector('#login-ui button').innerText = "يلا بينا 🚀"; return;
                 }
 
                 const data = docRef.data();
                 const myDevice = getDeviceUUID();
 
-                // حماية الأجهزة (إذا كان مسجل بجهاز آخر يرفض الدخول)
                 if (data.device_id && data.device_id !== myDevice) {
-                    errEl.innerText = "⛔ هذا الحساب مسجل ومقفل على جهاز آخر."; errEl.style.display = 'block'; return;
+                    errEl.innerText = "⛔ الحساب ده مربوط بجهاز تاني، كلم الأدمن لو غيرت موبايلك."; errEl.style.display = 'block'; 
+                    document.querySelector('#login-ui button').innerText = "يلا بينا 🚀"; return;
                 }
 
-                // تسجيل الجهاز إذا كانت أول مرة يدخل
-                if (!data.device_id) {
-                    await db.collection('reviewers').doc(revId).update({ device_id: myDevice });
-                }
+                if (!data.device_id) await db.collection('reviewers').doc(revId).update({ device_id: myDevice });
 
-                // الدخول ناجح
-                currentReviewer = { id: revId, name: data.name };
-                localStorage.setItem('mq_reviewer_id', revId);
+                currentReviewer = { id: revId, name: data.name, year: data.year || "الفرقة الأولى", edits: data.edits_submitted || 0 };
+                localStorage.setItem('mq_rev_id', revId);
                 
                 document.getElementById('login-ui').style.display = 'none';
                 document.getElementById('app-ui').style.display = 'block';
-                document.getElementById('rev-name').innerText = data.name;
-                document.getElementById('rev-id-display').innerText = revId;
+                document.getElementById('rev-name').innerText = currentReviewer.name;
+                document.getElementById('rev-year').innerText = currentReviewer.year;
+                document.getElementById('rev-edits').innerText = currentReviewer.edits;
 
-                startIdleTracker(); // تشغيل متتبع الوقت
-            } catch (error) {
-                console.error(error);
-                errEl.innerText = "❌ حدث خطأ في الاتصال بالسيرفر."; errEl.style.display = 'block';
-            }
-        }
+                setupHierarchy();
 
-        // جلب المحاضرة
-        async function fetchLecture() {
-            const lecId = document.getElementById('lec-id-input').value.trim();
-            if (!lecId) return alert('أدخل ID المحاضرة');
-
-            const feed = document.getElementById('questions-feed');
-            feed.innerHTML = '<h3 style="text-align:center; color:var(--primary);">⏳ جاري التحميل...</h3>';
-
-            try {
-                const docRef = await db.collection('lectures').doc(lecId).get();
-                if (!docRef.exists) {
-                    feed.innerHTML = '<h3 style="color:var(--error); text-align:center;">المحاضرة غير موجودة!</h3>'; return;
+                // فحص الرابط المباشر
+                const urlParams = new URLSearchParams(window.location.search);
+                const directLec = urlParams.get('lec');
+                if(directLec) {
+                    document.getElementById('hierarchy-ui').style.display = 'none';
+                    fetchLecture(directLec);
+                } else {
+                    document.getElementById('hierarchy-ui').style.display = 'block';
                 }
 
-                currentLectureId = lecId;
-                activeQuestions = docRef.data().questions || [];
-                renderQuestions();
-
-            } catch (error) {
-                feed.innerHTML = '<h3 style="color:var(--error); text-align:center;">حدث خطأ! تأكد من القواعد الأمنية.</h3>';
-            }
+            } catch (error) { errEl.innerText = "❌ في مشكلة في النت أو السيرفر."; errEl.style.display = 'block'; document.querySelector('#login-ui button').innerText = "يلا بينا 🚀"; }
         }
 
-        // رسم الأسئلة
-        function renderQuestions() {
-            const feed = document.getElementById('questions-feed');
-            feed.innerHTML = `<h3 style="border-bottom:2px solid var(--border); padding-bottom:10px;">📋 أسئلة المحاضرة (${activeQuestions.length})</h3>`;
-
-            activeQuestions.forEach((q, index) => {
-                const optsText = q.options ? q.options.map(o => `<li>${o}</li>`).join('') : 'لا يوجد خيارات';
-                const card = document.createElement('div');
-                card.className = 'card q-box';
-                card.innerHTML = `
-                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                        <span style="font-weight:bold; color:var(--primary);">سؤال ${index + 1}</span>
-                        <button onclick="openEditModal(${index})" style="background:var(--error); padding:6px 12px; font-size:0.9rem;">⚠️ إبلاغ / تعديل</button>
-                    </div>
-                    <div style="font-size:1.1rem; font-weight:bold; margin-bottom:15px; direction:ltr; text-align:left;">${q.q}</div>
-                    <ul style="direction:ltr; text-align:left; color:#475569;">${optsText}</ul>
-                    <div class="ans-correct" style="direction:ltr; text-align:left;">✅ Answer: ${q.a || 'غير محدد'}</div>
-                    ${q.d ? `<div style="background:#f1f5f9; padding:10px; border-radius:8px; font-size:0.95rem; border-right:4px solid #f59e0b;"><b>💡 التفسير:</b><br>${q.d}</div>` : ''}
-                `;
-                feed.appendChild(card);
+        // بناء الموديولات حسب السنة
+        function setupHierarchy() {
+            const select = document.getElementById('module-select');
+            select.innerHTML = '<option value="" disabled selected>-- اختار الموديول من هنا --</option>';
+            const mods = curriculum[currentReviewer.year] || [];
+            mods.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m; opt.innerText = m; select.appendChild(opt);
+            });
+            // جلب الموديولات الإضافية من الداتا بيز (لو الأدمن ضاف حاجة مش في القائمة)
+            db.collection('lectures').where('year', '==', currentReviewer.year).get().then(snap => {
+                let dbMods = new Set();
+                snap.forEach(doc => { if(doc.data().module) dbMods.add(doc.data().module); });
+                dbMods.forEach(m => {
+                    if(!mods.includes(m)) {
+                        const opt = document.createElement('option'); opt.value = m; opt.innerText = m + " (إضافي)"; select.appendChild(opt);
+                    }
+                });
             });
         }
 
-        // ================== نظام التعديل (Drafts) ==================
+        async function loadLecturesForModule() {
+            const mod = document.getElementById('module-select').value;
+            const listDiv = document.getElementById('lectures-list');
+            listDiv.innerHTML = '<div style="text-align:center; color:var(--primary); font-weight:bold;">جاري التحميل... ⏳</div>';
+            
+            const snap = await db.collection('lectures').where('year', '==', currentReviewer.year).where('module', '==', mod).get();
+            listDiv.innerHTML = '';
+            
+            if(snap.empty) { listDiv.innerHTML = '<div style="text-align:center; color:var(--error); font-weight:bold;">مفيش محاضرات مرفوعة للموديول دا لسا.</div>'; return; }
+            
+            snap.forEach(doc => {
+                const d = doc.data();
+                const subj = d.subject ? ` <span style="background:#e2e8f0; padding:2px 8px; border-radius:10px; font-size:0.8rem;">${d.subject}</span>` : '';
+                listDiv.innerHTML += `
+                    <div class="lec-item" onclick="fetchLecture('${doc.id}')">
+                        <div><span style="font-size:1.2rem;">📄</span> ${d.title || doc.id} ${subj}</div>
+                        <div style="color:var(--primary);">ابدأ المراجعة ➡️</div>
+                    </div>`;
+            });
+        }
+
+        async function fetchLecture(lecId) {
+            document.getElementById('hierarchy-ui').style.display = 'none';
+            const feed = document.getElementById('questions-feed');
+            feed.innerHTML = '<div class="card" style="text-align:center;"><h2 style="color:var(--primary);">جاري تحضير الأسئلة... ⏳</h2></div>';
+
+            try {
+                const docRef = await db.collection('lectures').doc(lecId).get();
+                if (!docRef.exists) { feed.innerHTML = '<div class="card" style="color:var(--error); text-align:center;"><h2>المحاضرة دي مش موجودة!</h2><button onclick="document.getElementById(\'hierarchy-ui\').style.display=\'block\'; this.parentElement.style.display=\'none\';">رجوع</button></div>'; return; }
+
+                currentLectureId = lecId;
+                const data = docRef.data();
+                activeQuestions = data.questions || [];
+                
+                feed.innerHTML = `
+                    <div class="card" style="display:flex; justify-content:space-between; align-items:center; border-color:var(--success);">
+                        <h2 style="margin:0; color:var(--success);">📚 ${data.title || lecId}</h2>
+                        <button onclick="document.getElementById('hierarchy-ui').style.display='block'; document.getElementById('questions-feed').innerHTML='';" style="background:#64748b; padding:10px 15px; font-size:0.9rem;">رجوع للمواد 🔙</button>
+                    </div>
+                `;
+                
+                activeQuestions.forEach((q, index) => {
+                    const optsText = q.options ? q.options.map(o => `<li style="margin-bottom:5px;">${o}</li>`).join('') : 'لا يوجد خيارات';
+                    const card = document.createElement('div');
+                    card.className = 'card q-box';
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; margin-bottom:15px; border-bottom:1px solid #bae6fd; padding-bottom:10px;">
+                            <span style="font-weight:900; color:var(--primary); font-size:1.2rem;">سؤال رقم ${index + 1}</span>
+                            <button onclick="openEditModal(${index})" style="background:var(--error); padding:8px 15px; font-size:1rem; border-radius:10px;">⚠️ فيها مشكلة؟ صلحها</button>
+                        </div>
+                        <div style="font-size:1.2rem; font-weight:bold; margin-bottom:15px; direction:ltr; text-align:left; color:var(--text);">${q.q}</div>
+                        <ul style="direction:ltr; text-align:left; color:#475569; font-size:1.05rem; font-weight:bold;">${optsText}</ul>
+                        <div class="ans-correct" style="direction:ltr; text-align:left; font-size:1.1rem;">✅ Answer: ${q.a || 'مش متحددة'}</div>
+                        ${q.d ? `<div style="background:#f1f5f9; padding:15px; border-radius:12px; font-size:1rem; border-right:4px solid var(--accent); margin-top:15px;"><b>💡 الشرح:</b><br><span style="direction:ltr; display:block; text-align:left; margin-top:5px;">${q.d}</span></div>` : ''}
+                    `;
+                    feed.appendChild(card);
+                });
+
+                // تغيير الرابط ليكون مباشر (بدون عمل ريفرش)
+                window.history.pushState({}, '', '?lec=' + lecId);
+
+            } catch (error) { feed.innerHTML = '<div class="card" style="color:var(--error); text-align:center;"><h2>حدث خطأ!</h2></div>'; }
+        }
+
+        // ================== نظام التعديل المرح ==================
         function toggleEditField(id) {
             const el = document.getElementById(id);
             el.style.display = el.style.display === 'none' ? 'block' : 'none';
@@ -228,33 +303,59 @@
             editingIndex = index;
             const q = activeQuestions[index];
             
-            // تصفير الخانات
-            document.querySelectorAll('#edit-modal input[type="checkbox"]').forEach(c => c.checked = false);
-            document.getElementById('edit-q-box').style.display = 'none';
-            document.getElementById('edit-opts-box').style.display = 'none';
-            document.getElementById('edit-ans-box').style.display = 'none';
-            document.getElementById('edit-exp-box').style.display = 'none';
+            document.getElementById('edit-step-1').style.display = 'block';
+            document.getElementById('edit-step-2').style.display = 'none';
 
-            // تعبئة البيانات القديمة
+            document.querySelectorAll('#edit-modal input[type="checkbox"]').forEach(c => c.checked = false);
+            ['edit-q-box', 'edit-opts-box', 'edit-ans-box', 'edit-exp-box'].forEach(id => document.getElementById(id).style.display = 'none');
+
             document.getElementById('new-q-text').value = q.q || '';
             document.getElementById('new-opts-text').value = q.options ? q.options.join('\n') : '';
             document.getElementById('new-ans-text').value = q.a || '';
             document.getElementById('new-exp-text').value = q.d || '';
+            document.getElementById('edit-reason').value = '';
 
             document.getElementById('edit-modal').style.display = 'flex';
         }
 
         function closeModal() { document.getElementById('edit-modal').style.display = 'none'; }
 
+        function previewDraft() {
+            if (!document.getElementById('chk-q').checked && !document.getElementById('chk-opts').checked && !document.getElementById('chk-ans').checked && !document.getElementById('chk-exp').checked) {
+                return alert("يا دكتور إنت معلمتش على حاجة عشان تتعدل! 😅");
+            }
+
+            const q = activeQuestions[editingIndex];
+            const pQ = document.getElementById('chk-q').checked ? document.getElementById('new-q-text').value : q.q;
+            const pOpts = document.getElementById('chk-opts').checked ? document.getElementById('new-opts-text').value.split('\n').filter(o=>o.trim()) : q.options;
+            const pAns = document.getElementById('chk-ans').checked ? document.getElementById('new-ans-text').value : q.a;
+            const pExp = document.getElementById('chk-exp').checked ? document.getElementById('new-exp-text').value : (q.d || '');
+
+            document.getElementById('preview-box').innerHTML = `
+                <div style="font-size:1.1rem; font-weight:bold; margin-bottom:10px; color:#1e293b;">${pQ}</div>
+                <ul style="color:#475569; font-weight:bold;">${pOpts.map(o => `<li>${o}</li>`).join('')}</ul>
+                <div style="color:#059669; font-weight:900; margin-top:10px;">✅ ${pAns}</div>
+                ${pExp ? `<div style="margin-top:10px; color:#64748b; border-top:1px dashed #cbd5e1; padding-top:10px;">💡 ${pExp}</div>` : ''}
+            `;
+
+            document.getElementById('edit-step-1').style.display = 'none';
+            document.getElementById('edit-step-2').style.display = 'block';
+        }
+
+        function backToEdit() {
+            document.getElementById('edit-step-2').style.display = 'none';
+            document.getElementById('edit-step-1').style.display = 'block';
+        }
+
         async function submitDraft() {
             const q = activeQuestions[editingIndex];
             
-            // تجميع التعديلات (سيتم إرسال ما تم تحديده فقط، والباقي نرسله كما هو ليعرف المدير السؤال كاملاً)
             const draftData = {
                 lecture_id: currentLectureId,
                 question_index: editingIndex,
                 reviewer_id: currentReviewer.id,
                 reviewer_name: currentReviewer.name,
+                reason: document.getElementById('edit-reason').value.trim() || 'بدون سبب',
                 status: 'pending',
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 
@@ -271,62 +372,25 @@
                 new_exp: document.getElementById('chk-exp').checked ? document.getElementById('new-exp-text').value : (q.d || ''),
             };
 
-            // التحقق من أنه اختار شيئاً لتعديله
-            if (!document.getElementById('chk-q').checked && !document.getElementById('chk-opts').checked && !document.getElementById('chk-ans').checked && !document.getElementById('chk-exp').checked) {
-                return alert("الرجاء تحديد جزء واحد على الأقل للتعديل!");
-            }
+            document.querySelector('#edit-step-2 button').innerText = "جاري الإرسال... 🚀";
 
             try {
-                // إرسال المسودة
                 await db.collection('question_drafts').add(draftData);
+                await db.collection('reviewers').doc(currentReviewer.id).update({ edits_submitted: firebase.firestore.FieldValue.increment(1) });
                 
-                // زيادة عداد إنجازات المراجع (كمكافأة له)
-                await db.collection('reviewers').doc(currentReviewer.id).update({
-                    edits_submitted: firebase.firestore.FieldValue.increment(1)
-                });
+                currentReviewer.edits += 1;
+                document.getElementById('rev-edits').innerText = currentReviewer.edits;
 
-                alert("✅ تم إرسال التعديل للإدارة بنجاح. شكراً لمجهودك!");
+                alert("✅ عاش يا بطل! التعديل وصل للأدمن وهيتم مراجعته.");
+                document.querySelector('#edit-step-2 button').innerText = "كدا فل جداً، ابعت 🚀";
                 closeModal();
             } catch (e) {
-                console.error(e);
-                alert("❌ حدث خطأ أثناء الإرسال.");
+                console.error(e); alert("❌ حصلت مشكلة في النت، جرب تاني.");
+                document.querySelector('#edit-step-2 button').innerText = "كدا فل جداً، ابعت 🚀";
             }
         }
 
-        // ================== متتبع الوقت (Idle Tracker) ==================
-        let activeSeconds = 0;
-        let isIdle = false;
-        let idleTimer;
-
-        function resetIdleTimer() {
-            isIdle = false;
-            clearTimeout(idleTimer);
-            idleTimer = setTimeout(() => { isIdle = true; }, 60000); // يعتبر خاملاً بعد دقيقة من عدم الحركة
-        }
-
-        function startIdleTracker() {
-            document.body.addEventListener('mousemove', resetIdleTimer);
-            document.body.addEventListener('keypress', resetIdleTimer);
-            document.body.addEventListener('touchstart', resetIdleTimer);
-            resetIdleTimer();
-
-            // حفظ الوقت في الداتا بيز كل دقيقة
-            setInterval(async () => {
-                if (!isIdle && currentReviewer) {
-                    activeSeconds += 60;
-                    try {
-                        await db.collection('reviewers').doc(currentReviewer.id).update({
-                            time_spent_minutes: firebase.firestore.FieldValue.increment(1)
-                        });
-                    } catch(e) {}
-                }
-            }, 60000);
-        }
-
-        function logout() {
-            localStorage.removeItem('mq_reviewer_id');
-            location.reload();
-        }
+        function logout() { localStorage.removeItem('mq_rev_id'); location.href = window.location.pathname; }
     </script>
 </body>
 </html>
