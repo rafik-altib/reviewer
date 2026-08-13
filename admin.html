@@ -31,6 +31,7 @@
         th { background: #0f172a; color: #3b82f6; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; box-sizing: border-box;}
         .modal-content { background: #1e293b; padding: 25px; border-radius: 15px; width: 100%; max-width: 600px; border: 2px solid #3b82f6; max-height:90vh; overflow-y:auto;}
+        .hierarchy-box { background: #0f172a; border: 1px dashed #3b82f6; padding: 15px; border-radius: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -50,6 +51,7 @@
             <button class="tab-btn active" onclick="switchTab('upload')">📤 رفع المحاضرات</button>
             <button class="tab-btn" onclick="switchTab('drafts')">📝 مراجعة التعديلات</button>
             <button class="tab-btn" onclick="switchTab('reviewers')">👥 إدارة المراجعين</button>
+            <button class="tab-btn" onclick="switchTab('hierarchy')">🗂️ إدارة الهيكل الدراسي</button>
         </div>
 
         <!-- 1. رفع المحاضرات -->
@@ -57,38 +59,25 @@
             <h3 style="color:#60a5fa; margin-top:0;">الماكينة السريعة لرفع الـ MCQ</h3>
             <p style="font-size:0.9rem; color:#94a3b8; direction:ltr; text-align:left;">Format: Title \n Part | Question | O1 | O2 | O3 | O4 | CorrectNum(1-4) | Exp</p>
             
-            <!-- Datalists for easy selection -->
-            <datalist id="module-list">
-                <option value="F1"><option value="F2"><option value="F3"><option value="MSK">
-                <option value="Blood"><option value="GIT"><option value="Reproductive"><option value="CNS"><option value="special scenes"><option value="Renal">
-                <option value="Respiratory"><option value="Cardiovascular"><option value="Endocrine"><option value="Medicine I"><option value="Surgery I">
-                <option value="Medicine II"><option value="Surgery II"><option value="PHC/Ped"><option value="PHC/OBS/GYN">
-            </datalist>
-
             <div style="display:flex; gap:10px;">
                 <div style="flex:1;">
                     <label>الجامعة:</label>
-                    <select id="up-uni">
-                        <option value="حكومي">حكومي</option>
-                        <option value="أهلية">أهلية</option>
+                    <select id="up-uni" onchange="populateUploadDropdowns()"><option value="حكومي">حكومي</option><option value="أهلية">أهلية</option></select>
+                </div>
+                <div style="flex:1;">
+                    <label>الفرقة:</label>
+                    <select id="up-year" onchange="populateUploadDropdowns()">
+                        <option value="الفرقة الأولى">الفرقة الأولى</option><option value="الفرقة الثانية">الفرقة الثانية</option>
+                        <option value="الفرقة الثالثة">الفرقة الثالثة</option><option value="الفرقة الرابعة">الفرقة الرابعة</option>
                     </select>
                 </div>
                 <div style="flex:1;">
-                    <label>السنة الدراسية:</label>
-                    <select id="up-year">
-                        <option value="الفرقة الأولى">الفرقة الأولى</option>
-                        <option value="الفرقة الثانية">الفرقة الثانية</option>
-                        <option value="الفرقة الثالثة">الفرقة الثالثة</option>
-                        <option value="الفرقة الرابعة">الفرقة الرابعة</option>
-                    </select>
-                </div>
-                <div style="flex:1;">
-                    <label>الموديول (اختار أو اكتب جديد):</label>
-                    <input type="text" id="up-module" list="module-list" placeholder="مثال: CNS">
+                    <label>الموديول:</label>
+                    <select id="up-module" onchange="populateUploadSubjects()"><option value="">-- اختار الموديول --</option></select>
                 </div>
                 <div style="flex:1;">
                     <label>المادة (اختياري):</label>
-                    <input type="text" id="up-subject" placeholder="مثال: Anatomy">
+                    <select id="up-subject"><option value="">-- بدون مادة --</option></select>
                 </div>
             </div>
 
@@ -126,14 +115,11 @@
             <div style="display:flex; gap:10px;">
                 <input type="text" id="rev-name" placeholder="اسم المراجع" style="flex:2; margin:0;">
                 <select id="rev-uni" style="flex:1; margin:0;">
-                    <option value="حكومي">حكومي</option>
-                    <option value="أهلية">أهلية</option>
+                    <option value="حكومي">حكومي</option><option value="أهلية">أهلية</option>
                 </select>
                 <select id="rev-year" style="flex:1; margin:0;">
-                    <option value="الفرقة الأولى">الفرقة الأولى</option>
-                    <option value="الفرقة الثانية">الفرقة الثانية</option>
-                    <option value="الفرقة الثالثة">الفرقة الثالثة</option>
-                    <option value="الفرقة الرابعة">الفرقة الرابعة</option>
+                    <option value="الفرقة الأولى">الفرقة الأولى</option><option value="الفرقة الثانية">الفرقة الثانية</option>
+                    <option value="الفرقة الثالثة">الفرقة الثالثة</option><option value="الفرقة الرابعة">الفرقة الرابعة</option>
                 </select>
                 <button onclick="addReviewer()" class="action-btn success-btn" style="flex:1; margin:0;">إضافة بطل 🦸‍♂️</button>
             </div>
@@ -145,6 +131,27 @@
                     <tbody id="reviewers-table"></tbody>
                 </table>
             </div>
+        </div>
+
+        <!-- 4. إدارة الهيكل الدراسي (قاعدة البيانات المصغرة) -->
+        <div id="tab-hierarchy" class="tab-content card">
+            <h3 style="color:#8b5cf6; margin-top:0;">🗂️ إدارة شجرة الموديولات والمواد</h3>
+            <p style="font-size:0.9rem; color:#94a3b8;">من هنا بتبني الشجرة اللي هتظهر للمراجعين وللأدمن وقت رفع المحاضرات.</p>
+            
+            <div style="display:flex; gap:10px; margin-bottom: 20px;">
+                <select id="hier-uni" onchange="renderHierarchyManager()"><option value="حكومي">حكومي</option><option value="أهلية">أهلية</option></select>
+                <select id="hier-year" onchange="renderHierarchyManager()">
+                    <option value="الفرقة الأولى">الفرقة الأولى</option><option value="الفرقة الثانية">الفرقة الثانية</option>
+                    <option value="الفرقة الثالثة">الفرقة الثالثة</option><option value="الفرقة الرابعة">الفرقة الرابعة</option>
+                </select>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-bottom: 20px;">
+                <input type="text" id="new-mod-name" placeholder="اسم الموديول الجديد (مثال: CNS)" style="flex:2; margin:0;">
+                <button onclick="addHierarchyModule()" class="action-btn success-btn" style="flex:1; margin:0;">➕ إضافة موديول</button>
+            </div>
+
+            <div id="hierarchy-tree-feed"></div>
         </div>
     </div>
 
@@ -193,12 +200,15 @@
         const db = firebase.firestore();
         const provider = new firebase.auth.GoogleAuthProvider();
 
+        let globalHierarchy = {}; // لتخزين الشجرة بالكامل
+
         const allowedEmails = ["mahmoud01030382018@gmail.com", "ma7moud01030382018@gmail.com", "mahmoud01281288817@gmail.com", "ma7moud01281288817@gmail.com"];
 
-        auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged(async (user) => {
             if (user && allowedEmails.includes(user.email)) {
                 document.getElementById('login-ui').style.display = 'none';
                 document.getElementById('dashboard-ui').style.display = 'block';
+                await loadHierarchyData();
                 loadReviewers();
                 loadDrafts();
             } else if (user) { alert("غير مصرح لك."); auth.signOut(); }
@@ -212,14 +222,140 @@
             document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-' + tabId).classList.add('active');
             event.target.classList.add('active');
+            if(tabId === 'hierarchy') renderHierarchyManager();
+        }
+
+        // ================= إدارة الهيكل (الشجرة) =================
+        async function loadHierarchyData() {
+            try {
+                const doc = await db.collection('admin_data').doc('hierarchy').get();
+                if (doc.exists) {
+                    globalHierarchy = doc.data();
+                } else {
+                    // بيانات مبدئية إذا لم تكن موجودة
+                    globalHierarchy = {
+                        "حكومي": {
+                            "الفرقة الأولى": {"F1":[], "F2":[], "F3":[], "MSK":[]},
+                            "الفرقة الثانية": {"Blood":[], "GIT":[], "Reproductive":[], "CNS":[], "special scenes":[], "Renal":[]},
+                            "الفرقة الثالثة": {"Respiratory":[], "Cardiovascular":[], "Endocrine":[], "Medicine I":[], "Surgery I":[]},
+                            "الفرقة الرابعة": {"Medicine II":[], "Surgery II":[], "PHC/Ped":[], "PHC/OBS/GYN":[]}
+                        },
+                        "أهلية": { "الفرقة الأولى": {}, "الفرقة الثانية": {}, "الفرقة الثالثة": {}, "الفرقة الرابعة": {} }
+                    };
+                    await db.collection('admin_data').doc('hierarchy').set(globalHierarchy);
+                }
+                populateUploadDropdowns(); // تحديث قوائم الرفع
+            } catch (e) { console.error(e); }
+        }
+
+        async function saveHierarchy() {
+            await db.collection('admin_data').doc('hierarchy').set(globalHierarchy);
+            populateUploadDropdowns();
+        }
+
+        function renderHierarchyManager() {
+            const uni = document.getElementById('hier-uni').value;
+            const year = document.getElementById('hier-year').value;
+            const feed = document.getElementById('hierarchy-tree-feed');
+            feed.innerHTML = '';
+
+            const mods = globalHierarchy[uni]?.[year] || {};
+            
+            if (Object.keys(mods).length === 0) {
+                feed.innerHTML = '<p style="color:#f59e0b; text-align:center;">لا توجد موديولات مضافة هنا.</p>';
+                return;
+            }
+
+            Object.keys(mods).forEach(modName => {
+                const subjects = mods[modName] || [];
+                const subjectsHtml = subjects.map((sub, idx) => `
+                    <div style="display:flex; justify-content:space-between; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; margin-bottom:5px;">
+                        <span>📚 ${sub}</span>
+                        <button onclick="deleteSubject('${uni}', '${year}', '${modName}', ${idx})" style="background:none; border:none; color:var(--error); cursor:pointer;">✖</button>
+                    </div>
+                `).join('');
+
+                feed.innerHTML += `
+                    <div class="hierarchy-box">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid #334155; padding-bottom:10px;">
+                            <h4 style="margin:0; color:#3b82f6;">📦 ${modName}</h4>
+                            <button onclick="deleteModule('${uni}', '${year}', '${modName}')" class="action-btn danger-btn" style="width:auto; padding:5px 15px;">حذف الموديول</button>
+                        </div>
+                        <div style="margin-bottom:10px; padding-right:15px;">${subjectsHtml}</div>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="new-sub-${modName}" placeholder="إضافة مادة جديدة داخل ${modName}..." style="margin:0; padding:8px;">
+                            <button onclick="addSubject('${uni}', '${year}', '${modName}')" class="action-btn success-btn" style="width:auto; padding:8px 15px;">إضافة ➕</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function addHierarchyModule() {
+            const uni = document.getElementById('hier-uni').value;
+            const year = document.getElementById('hier-year').value;
+            const modName = document.getElementById('new-mod-name').value.trim();
+            if(!modName) return;
+            
+            if(!globalHierarchy[uni]) globalHierarchy[uni] = {};
+            if(!globalHierarchy[uni][year]) globalHierarchy[uni][year] = {};
+            if(!globalHierarchy[uni][year][modName]) globalHierarchy[uni][year][modName] = [];
+            
+            saveHierarchy().then(() => { document.getElementById('new-mod-name').value = ''; renderHierarchyManager(); });
+        }
+
+        function deleteModule(uni, year, modName) {
+            if(confirm(`حذف موديول ${modName} بالكامل؟`)) {
+                delete globalHierarchy[uni][year][modName];
+                saveHierarchy().then(renderHierarchyManager);
+            }
+        }
+
+        function addSubject(uni, year, modName) {
+            const input = document.getElementById(`new-sub-${modName}`);
+            const subName = input.value.trim();
+            if(!subName) return;
+            globalHierarchy[uni][year][modName].push(subName);
+            saveHierarchy().then(renderHierarchyManager);
+        }
+
+        function deleteSubject(uni, year, modName, subIdx) {
+            if(confirm('حذف هذه المادة؟')) {
+                globalHierarchy[uni][year][modName].splice(subIdx, 1);
+                saveHierarchy().then(renderHierarchyManager);
+            }
+        }
+
+        function populateUploadDropdowns() {
+            const uni = document.getElementById('up-uni').value;
+            const year = document.getElementById('up-year').value;
+            const modSelect = document.getElementById('up-module');
+            
+            const mods = globalHierarchy[uni]?.[year] || {};
+            modSelect.innerHTML = '<option value="" disabled selected>-- اختار الموديول --</option>';
+            Object.keys(mods).forEach(m => modSelect.innerHTML += `<option value="${m}">${m}</option>`);
+            
+            populateUploadSubjects();
+        }
+
+        function populateUploadSubjects() {
+            const uni = document.getElementById('up-uni').value;
+            const year = document.getElementById('up-year').value;
+            const mod = document.getElementById('up-module').value;
+            const subSelect = document.getElementById('up-subject');
+            
+            subSelect.innerHTML = '<option value="">-- بدون مادة --</option>';
+            if(mod && globalHierarchy[uni]?.[year]?.[mod]) {
+                globalHierarchy[uni][year][mod].forEach(s => subSelect.innerHTML += `<option value="${s}">${s}</option>`);
+            }
         }
 
         // ================= رفع المحاضرات وتصديرها =================
         async function uploadLecture() {
             const uni = document.getElementById('up-uni').value;
             const year = document.getElementById('up-year').value;
-            const module = document.getElementById('up-module').value.trim();
-            const subject = document.getElementById('up-subject').value.trim();
+            const module = document.getElementById('up-module').value;
+            const subject = document.getElementById('up-subject').value;
             const text = document.getElementById('up-data').value.trim();
             const lecId = document.getElementById('up-id').value.trim();
 
@@ -238,7 +374,6 @@
                     let exp = p[7] || "";
                     let source = p[8] || "";
                     if(source) exp += `<br><b>المصدر:</b> ${source}`;
-                    
                     questions.push({ p: p[0], q: p[1], options: [p[2], p[3], p[4], p[5]], a: [p[2], p[3], p[4], p[5]][correctNum - 1], d: exp });
                 }
             }
@@ -263,7 +398,7 @@
                 let output = d.title + "\n";
                 d.questions.forEach(q => {
                     let cNum = q.options.indexOf(q.a) + 1;
-                    if(cNum === 0) cNum = 1; // Fallback
+                    if(cNum === 0) cNum = 1; 
                     output += `${q.p || 'Part'} | ${q.q} | ${q.options[0]} | ${q.options[1]} | ${q.options[2]} | ${q.options[3]} | ${cNum} | ${q.d}\n`;
                 });
                 navigator.clipboard.writeText(output);
@@ -278,12 +413,11 @@
             const year = document.getElementById('rev-year').value;
             if(!name) return;
             
-            // توليد ID صعب 10 حروف (Rev + 7 أرقام وحروف)
+            // ID صعب 10 حروف (Rev + 7 أرقام وحروف عشوائية)
             const newId = 'Rev' + Math.random().toString(36).substring(2, 9).toUpperCase(); 
             
             await db.collection('reviewers').doc(newId).set({ 
-                name: name, uni_type: uni, year: year, 
-                edits_submitted: 0, time_spent_minutes: 0, device_id: null 
+                name: name, uni_type: uni, year: year, edits_submitted: 0, time_spent_minutes: 0, device_id: null 
             });
             document.getElementById('rev-name').value = ''; loadReviewers();
         }
@@ -304,7 +438,7 @@
                             <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">
                                 <button onclick="showRevStats('${doc.id}', '${d.name}')" class="action-btn" style="background:#3b82f6; padding:5px; width:auto; font-size:0.8rem;">سجل الإنجازات</button>
                                 ${d.device_id ? `<button onclick="resetDevice('${doc.id}')" class="action-btn warning-btn" style="padding:5px; width:auto; font-size:0.8rem;">مسح الجهاز</button>` : ''}
-                                <button onclick="openEditRev('${doc.id}', '${d.name}', '${d.uni_type}', '${d.year}')" class="action-btn success-btn" style="padding:5px; width:auto; font-size:0.8rem;">تعديل</button>
+                                <button onclick="openEditRev('${doc.id}', '${d.name}', '${d.uni_type || 'حكومي'}', '${d.year}')" class="action-btn success-btn" style="padding:5px; width:auto; font-size:0.8rem;">تعديل</button>
                                 <button onclick="deleteRev('${doc.id}')" class="action-btn danger-btn" style="padding:5px; width:auto; font-size:0.8rem;">حذف</button>
                             </div>
                         </td>
@@ -315,7 +449,7 @@
         }
 
         async function resetDevice(id) {
-            if(confirm("هل أنت متأكد من مسح الجهاز لهذا المراجع ليتمكن من الدخول من جهاز آخر؟")) {
+            if(confirm("هل أنت متأكد من مسح الجهاز لهذا المراجع؟")) {
                 await db.collection('reviewers').doc(id).update({ device_id: null }); loadReviewers();
             }
         }
@@ -329,7 +463,7 @@
         function openEditRev(id, name, uni, year) {
             document.getElementById('edit-rev-id').value = id;
             document.getElementById('edit-rev-name').value = name;
-            document.getElementById('edit-rev-uni').value = uni || 'حكومي';
+            document.getElementById('edit-rev-uni').value = uni;
             document.getElementById('edit-rev-year').value = year;
             document.getElementById('edit-rev-modal').style.display = 'flex';
         }
@@ -350,17 +484,19 @@
             const content = document.getElementById('stats-rev-content');
             content.innerHTML = '<p>جاري التحميل...</p>';
             
-            // سحب المسودات المعتمدة (سنعتمد على حقل status لاحقاً لو أضفناه، حالياً نعرض الأرشيف لو موجود أو المسودات المعلقة)
-            // بما أننا نحذف المسودة بعد اعتمادها، سنحفظ نسخة في أرشيف جديد اسمو `approved_edits`
             const snap = await db.collection('approved_edits').where('reviewer_id', '==', revId).get();
-            if(snap.empty) { content.innerHTML = `<p style="color:#f59e0b;">لا توجد تعديلات معتمدة مسجلة لـ ${revName} حتى الآن.</p>`; return; }
+            if(snap.empty) { content.innerHTML = `<p style="color:#f59e0b; text-align:center;">لا توجد تعديلات معتمدة مسجلة لـ ${revName} حتى الآن.</p>`; return; }
             
             let html = '';
             snap.forEach(doc => {
                 const d = doc.data();
-                html += `<div style="background:#0f172a; padding:10px; border-radius:8px; margin-bottom:10px; border-right:4px solid #10b981;">
-                    <b style="color:#3b82f6;">محاضرة: ${d.lecture_id} (سؤال ${d.question_index + 1})</b><br>
-                    <span style="font-size:0.9rem; color:#cbd5e1;"><b>السؤال:</b> ${d.new_q}</span>
+                const dateStr = d.timestamp ? d.timestamp.toDate().toLocaleString('ar-EG') : 'وقت غير معروف';
+                html += `<div style="background:#0f172a; padding:15px; border-radius:10px; margin-bottom:10px; border-right:4px solid #10b981;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <b style="color:#3b82f6;">محاضرة: <a href="reviewer.html?lec=${d.lecture_id}" target="_blank" style="color:#60a5fa;">${d.lecture_id}</a> (سؤال ${d.question_index + 1})</b>
+                        <span style="font-size:0.8rem; color:#64748b;">${dateStr}</span>
+                    </div>
+                    <span style="font-size:0.95rem; color:#cbd5e1; display:block;"><b>السؤال المعتمد:</b> ${d.new_q}</span>
                 </div>`;
             });
             content.innerHTML = html;
@@ -387,19 +523,17 @@
                             </div>
                             
                             <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap;">
-                                <!-- المربع القديم (للقراءة فقط) -->
                                 <div style="flex:1; min-width:300px; background:#020617; padding:15px; border-radius:10px; direction:ltr; text-align:left; opacity:0.8;">
                                     <h4 style="color:#ef4444; margin-top:0;">الأصلي (القديم)</h4>
                                     <b>Q:</b> ${d.original_q}<br><br><b>Opts:</b><br>${d.original_options.join('<br>')}<br><br><b>A:</b> ${d.original_ans}<br><br><b>Exp:</b> ${d.original_exp}
                                 </div>
                                 
-                                <!-- المربع الجديد (قابل للتعديل من الأدمن قبل الاعتماد) -->
                                 <div style="flex:1; min-width:300px; background:#020617; padding:15px; border-radius:10px; direction:ltr; text-align:left; border:1px solid #10b981;">
-                                    <h4 style="color:#10b981; margin-top:0;">التعديل (عدل براحتك قبل ما تعتمد)</h4>
+                                    <h4 style="color:#10b981; margin-top:0;">التعديل (عدل براحتك قبل الاعتماد)</h4>
                                     <input type="text" id="dq-${doc.id}" value="${d.new_q}" style="margin-bottom:8px; font-size:0.9rem;">
                                     <textarea id="dopts-${doc.id}" rows="4" style="margin-bottom:8px; font-size:0.9rem;">${optsText}</textarea>
                                     <input type="text" id="dans-${doc.id}" value="${d.new_ans}" style="margin-bottom:8px; font-size:0.9rem;">
-                                    <textarea id="dexp-${doc.id}" rows="2" style="margin-bottom:8px; font-size:0.9rem;">${d.new_exp}</textarea>
+                                    <textarea id="dexp-${doc.id}" rows="3" style="margin-bottom:8px; font-size:0.9rem;">${d.new_exp}</textarea>
                                 </div>
                             </div>
                             
@@ -421,7 +555,6 @@
         async function approveDraft(draftId, lecId, qIndex, revId) {
             if(!confirm("سيتم استبدال السؤال القديم بهذا التعديل، متأكد؟")) return;
             
-            // قراءة التعديلات النهائية اللي الأدمن عملها في الـ Inputs
             const finalQ = document.getElementById(`dq-${draftId}`).value;
             const finalOpts = document.getElementById(`dopts-${draftId}`).value.split('\n').filter(o=>o.trim());
             const finalAns = document.getElementById(`dans-${draftId}`).value;
@@ -431,22 +564,18 @@
                 const lecDoc = await db.collection('lectures').doc(lecId).get();
                 let qs = lecDoc.data().questions;
                 
-                // استبدال السؤال
                 qs[qIndex].q = finalQ;
                 qs[qIndex].options = finalOpts;
                 qs[qIndex].a = finalAns;
                 qs[qIndex].d = finalExp;
 
-                // تحديث المحاضرة 
                 await db.collection('lectures').doc(lecId).update({ questions: qs });
                 
-                // حفظ نسخة في أرشيف الإنجازات للمراجع
                 await db.collection('approved_edits').add({
                     reviewer_id: revId, lecture_id: lecId, question_index: qIndex,
                     new_q: finalQ, timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                // حذف المسودة
                 await db.collection('question_drafts').doc(draftId).delete();
                 
                 alert("✅ تم اعتماد التعديل بنجاح والمحاضرة اتحدثت!");
