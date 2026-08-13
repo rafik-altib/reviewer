@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MedQuiz | بوابة أبطال المراجعة 🦸‍♂️</title>
-    <!-- استدعاء خط Cairo لجمال واحترافية الواجهة -->
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
@@ -21,11 +20,17 @@
         .ans-correct { background: #d1fae5; color: #065f46; padding: 12px; border-radius: 10px; font-weight: bold; margin-bottom: 10px; border: 1px dashed #10b981; }
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); display: none; justify-content: center; align-items: center; z-index: 1000; overflow-y: auto; padding: 20px; box-sizing: border-box; backdrop-filter: blur(5px); }
         .modal-content { background: var(--card); padding: 30px; border-radius: 25px; width: 100%; max-width: 650px; position: relative; border: 3px solid var(--primary); }
-        .badge { background: var(--accent); color: #fff; padding: 5px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; }
+        .badge { background: var(--accent); color: #fff; padding: 5px 12px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; white-space: nowrap; }
         .lec-item { background: #fff; border: 2px solid var(--border); padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .lec-item:hover { border-color: var(--primary); background: #eff6ff; }
         .quote-box { background: rgba(16, 185, 129, 0.1); border: 1px dashed #10b981; padding: 15px; border-radius: 15px; text-align: center; color: #065f46; font-weight: bold; font-size: 1.1rem; margin-bottom: 20px; }
         #app-ui, #hierarchy-ui { display: none; }
+        
+        /* حل مشكلة التداخل في الموبايل */
+        .badges-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 12px; }
+        @media (max-width: 600px) {
+            .header-card { flex-direction: column; text-align: center; gap: 15px; }
+        }
     </style>
 </head>
 <body>
@@ -45,26 +50,36 @@
         <div id="app-ui">
             <div class="quote-box">
                 ✨ "واللهُ في عَونِ العَبْدِ مَا كَانَ العَبْدُ في عَونِ أَخِيهِ" ✨<br>
-                <span style="font-size: 0.9rem; color: #64748b;">مجهودك هنا بيساعد مئات الدكاترة زمايلك.. شكراً ليك!</span>
+                <span style="font-size: 0.9rem; color: #64748b;">مجهودك هنا بيساعد آلاف الدكاترة زمايلك.. شكراً ليك!</span>
             </div>
 
-            <div class="card" style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #1e293b, #0f172a); color: white; border: none;">
-                <div>
+            <div class="card header-card" style="display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #1e293b, #0f172a); color: white; border: none;">
+                <div style="text-align: center; width: 100%;">
                     <h3 style="margin: 0; font-size: 1.4rem;">منورنا يا <span id="rev-name" style="color: #34d399;"></span> ✨</h3>
-                    <div style="margin-top: 8px;">
+                    <div class="badges-container">
                         <span class="badge" id="rev-year"></span>
                         <span class="badge" style="background:#3b82f6;" id="rev-uni"></span>
                         <span class="badge" style="background: #10b981;">ساهمت في تعديل <span id="rev-edits">0</span> سؤال 🎯</span>
                     </div>
                 </div>
-                <button onclick="logout()" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; box-shadow: none; border: 1px solid #ef4444;">خروج</button>
+                <button onclick="logout()" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; box-shadow: none; border: 1px solid #ef4444; width: auto; white-space: nowrap;">خروج</button>
             </div>
 
             <div id="hierarchy-ui" class="card" style="border-color: #8b5cf6;">
-                <h3 style="color: #8b5cf6; margin-top: 0;">📚 اختار الموديول اللي حابب تراجعه:</h3>
-                <select id="module-select" onchange="loadLecturesForModule()">
-                    <option value="" disabled selected>-- اختار الموديول من هنا --</option>
+                <h3 style="color: #8b5cf6; margin-top: 0;">📚 شجرة المواد الخاصة بك:</h3>
+                
+                <label style="color:#64748b;">1. اختار الموديول:</label>
+                <select id="module-select" onchange="loadSubjectsForModule()">
+                    <option value="" disabled selected>-- جاري التحميل... --</option>
                 </select>
+
+                <div id="subject-container" style="display: none; margin-top: 15px;">
+                    <label style="color:#64748b;">2. اختار المادة (القسم):</label>
+                    <select id="subject-select" onchange="loadLecturesForSubject()">
+                        <option value="" disabled selected>-- اختار المادة --</option>
+                    </select>
+                </div>
+
                 <div id="lectures-list" style="margin-top: 20px;"></div>
             </div>
 
@@ -143,6 +158,7 @@
         let currentLectureId = null;
         let activeQuestions = [];
         let editingIndex = null;
+        let globalHierarchy = {}; // لتخزين شجرة المواد
 
         function getDeviceUUID() {
             let uuid = localStorage.getItem('mq_rev_uuid');
@@ -199,7 +215,7 @@
                 document.getElementById('rev-uni').innerText = currentReviewer.uni_type;
                 document.getElementById('rev-edits').innerText = currentReviewer.edits;
 
-                setupHierarchy();
+                fetchHierarchyFromDB();
 
                 const urlParams = new URLSearchParams(window.location.search);
                 const directLec = urlParams.get('lec');
@@ -213,46 +229,74 @@
             } catch (error) { errEl.innerText = "❌ في مشكلة في النت أو السيرفر."; errEl.style.display = 'block'; document.querySelector('#login-ui button').innerText = "يلا بينا 🚀"; }
         }
 
-        function setupHierarchy() {
-            const select = document.getElementById('module-select');
-            select.innerHTML = '<option value="" disabled selected>-- جاري جلب الموديولات المتاحة لدفعتك --</option>';
-            
-            // سحب الموديولات بناء على السنة والجامعة
-            db.collection('lectures')
-              .where('year', '==', currentReviewer.year)
-              .where('uni_type', '==', currentReviewer.uni_type)
-              .get().then(snap => {
-                let dbMods = new Set();
-                snap.forEach(doc => { if(doc.data().module) dbMods.add(doc.data().module); });
-                
-                select.innerHTML = '<option value="" disabled selected>-- اختار الموديول من هنا --</option>';
-                if(dbMods.size === 0) { select.innerHTML = '<option disabled>لا توجد موديولات مرفوعة لدفعتك حالياً</option>'; return; }
-                
-                dbMods.forEach(m => {
-                    const opt = document.createElement('option'); opt.value = m; opt.innerText = m; select.appendChild(opt);
-                });
-            });
+        // ================== نظام الشجرة الديناميكي ==================
+        async function fetchHierarchyFromDB() {
+            const selectMod = document.getElementById('module-select');
+            try {
+                const doc = await db.collection('admin_data').doc('hierarchy').get();
+                if(doc.exists && doc.data()[currentReviewer.uni_type] && doc.data()[currentReviewer.uni_type][currentReviewer.year]) {
+                    globalHierarchy = doc.data()[currentReviewer.uni_type][currentReviewer.year];
+                    
+                    selectMod.innerHTML = '<option value="" disabled selected>-- اختار الموديول من هنا --</option>';
+                    Object.keys(globalHierarchy).forEach(mod => {
+                        selectMod.innerHTML += `<option value="${mod}">${mod}</option>`;
+                    });
+                } else {
+                    selectMod.innerHTML = '<option disabled>لا توجد موديولات مسجلة لك حالياً</option>';
+                }
+            } catch(e) { console.error(e); selectMod.innerHTML = '<option disabled>خطأ في جلب البيانات</option>'; }
         }
 
-        async function loadLecturesForModule() {
+        function loadSubjectsForModule() {
             const mod = document.getElementById('module-select').value;
+            const subContainer = document.getElementById('subject-container');
+            const subSelect = document.getElementById('subject-select');
             const listDiv = document.getElementById('lectures-list');
-            listDiv.innerHTML = '<div style="text-align:center; color:var(--primary); font-weight:bold;">جاري التحميل... ⏳</div>';
+            listDiv.innerHTML = ''; // مسح المحاضرات القديمة
             
-            const snap = await db.collection('lectures')
+            const subjects = globalHierarchy[mod] || [];
+            
+            if (subjects.length > 0) {
+                subContainer.style.display = 'block';
+                subSelect.innerHTML = '<option value="" disabled selected>-- اختار المادة (القسم) --</option>';
+                subjects.forEach(sub => {
+                    subSelect.innerHTML += `<option value="${sub}">${sub}</option>`;
+                });
+            } else {
+                // الموديول مفيهوش مواد متقسمة، نجيب المحاضرات على طول
+                subContainer.style.display = 'none';
+                fetchLecturesFromDB(mod, null);
+            }
+        }
+
+        function loadLecturesForSubject() {
+            const mod = document.getElementById('module-select').value;
+            const sub = document.getElementById('subject-select').value;
+            fetchLecturesFromDB(mod, sub);
+        }
+
+        async function fetchLecturesFromDB(mod, sub) {
+            const listDiv = document.getElementById('lectures-list');
+            listDiv.innerHTML = '<div style="text-align:center; color:var(--primary); font-weight:bold;">جاري تحميل المحاضرات... ⏳</div>';
+            
+            let query = db.collection('lectures')
                 .where('year', '==', currentReviewer.year)
                 .where('uni_type', '==', currentReviewer.uni_type)
-                .where('module', '==', mod).get();
+                .where('module', '==', mod);
+                
+            if (sub) { query = query.where('subject', '==', sub); }
             
+            const snap = await query.get();
             listDiv.innerHTML = '';
-            if(snap.empty) { listDiv.innerHTML = '<div style="text-align:center; color:var(--error); font-weight:bold;">مفيش محاضرات مرفوعة للموديول دا لسا.</div>'; return; }
+            
+            if(snap.empty) { listDiv.innerHTML = '<div style="text-align:center; color:var(--error); font-weight:bold;">مفيش محاضرات مرفوعة هنا لسا.</div>'; return; }
             
             snap.forEach(doc => {
                 const d = doc.data();
-                const subj = d.subject ? ` <span style="background:#e2e8f0; padding:2px 8px; border-radius:10px; font-size:0.8rem; color:#0f172a;">${d.subject}</span>` : '';
+                const subjBadge = d.subject ? ` <span style="background:#e2e8f0; padding:2px 8px; border-radius:10px; font-size:0.8rem; color:#0f172a;">${d.subject}</span>` : '';
                 listDiv.innerHTML += `
                     <div class="lec-item" onclick="fetchLecture('${doc.id}')">
-                        <div><span style="font-size:1.2rem;">📄</span> ${d.title || doc.id} ${subj}</div>
+                        <div><span style="font-size:1.2rem;">📄</span> ${d.title || doc.id} ${subjBadge}</div>
                         <div style="color:var(--primary);">ابدأ المراجعة ➡️</div>
                     </div>`;
             });
@@ -277,7 +321,7 @@
                             <h2 style="margin:0; color:var(--success);">📚 ${data.title || lecId}</h2>
                             <small style="color:#64748b; font-weight:bold;">${data.module || ''} - ${data.subject || ''}</small>
                         </div>
-                        <button onclick="document.getElementById('hierarchy-ui').style.display='block'; document.getElementById('questions-feed').innerHTML='';" style="background:#64748b; padding:10px 15px; font-size:0.9rem;">رجوع للمواد 🔙</button>
+                        <button onclick="document.getElementById('hierarchy-ui').style.display='block'; document.getElementById('questions-feed').innerHTML='';" style="background:#64748b; padding:10px 15px; font-size:0.9rem;">رجوع 🔙</button>
                     </div>
                 `;
                 
@@ -338,7 +382,6 @@
             const pExp = document.getElementById('chk-exp').checked ? document.getElementById('new-exp-text').value.trim() : (q.d || '');
             const pReason = document.getElementById('edit-reason').value.trim();
 
-            // 🚨 شرط منع الإرسال الفاضي: لو كل حاجة زي ما هي، ومفيش سبب مكتوب، امنعه!
             let isChanged = (pQ !== q.q) || (JSON.stringify(pOpts) !== JSON.stringify(q.options)) || (pAns !== q.a) || (pExp !== (q.d||''));
             
             if (!isChanged && pReason === '') {
