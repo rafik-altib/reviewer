@@ -3,49 +3,122 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MedQuiz Staging | بوابة الإدارة</title>
-    <!-- تضمين مكتبات Firebase (نسخة Compat لتناسب Vanilla JS) -->
+    <title>MedQuiz Staging | بوابة الإدارة الشاملة</title>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: #1e293b; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 2px solid #3b82f6; text-align: center; width: 90%; max-width: 400px; }
-        .btn-google { background: #ffffff; color: #000000; font-weight: bold; border: none; padding: 15px 20px; border-radius: 12px; font-size: 1.1rem; cursor: pointer; width: 100%; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.3s; }
-        .btn-google:hover { background: #f1f5f9; transform: translateY(-2px); }
-        .admin-emails { margin-top: 20px; font-size: 0.85rem; color: #94a3b8; line-height: 1.6; }
-        #dashboard-ui { display: none; width: 100%; padding: 20px; text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 20px; line-height: 1.6; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { background: #1e293b; padding: 25px; border-radius: 20px; border: 1px solid #334155; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #334155; padding-bottom: 15px; overflow-x: auto; }
+        .tab-btn { background: #0f172a; color: #94a3b8; border: 2px solid #334155; padding: 12px 20px; border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; white-space: nowrap; }
+        .tab-btn.active { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border-color: #3b82f6; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        input, select, textarea { width: 100%; padding: 12px; border-radius: 10px; background: #0f172a; border: 1px solid #475569; color: #fff; margin-bottom: 15px; font-family: inherit; font-size: 1rem; box-sizing: border-box; }
+        input:focus, select:focus, textarea:focus { border-color: #3b82f6; outline: none; }
+        button.action-btn { background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 1rem; transition: 0.2s; width: 100%; }
+        button.action-btn:hover { background: #2563eb; }
+        button.danger-btn { background: #ef4444; }
+        button.success-btn { background: #10b981; }
+        .draft-box { background: #0f172a; border: 1px solid #475569; padding: 20px; border-radius: 15px; margin-bottom: 15px; border-right: 5px solid #f59e0b; }
+        .diff-old { color: #ef4444; text-decoration: line-through; opacity: 0.7; }
+        .diff-new { color: #10b981; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #334155; padding: 12px; text-align: right; }
+        th { background: #0f172a; color: #3b82f6; }
     </style>
 </head>
 <body>
 
-    <!-- شاشة تسجيل الدخول -->
-    <div id="login-ui" class="login-card">
-        <h1 style="color: #3b82f6; margin-top: 0;">MedQuiz Staging</h1>
-        <h3 style="color: #cbd5e1; margin-bottom: 30px;">بوابة الإدارة المركزية 👑</h3>
-        
-        <button class="btn-google" onclick="signInWithGoogle()">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" width="20" height="20" alt="Google">
-            تسجيل الدخول كمدير
-        </button>
-        
-        <div class="admin-emails">
-            النظام محمي ومقفل.<br>لا يمكن الدخول إلا لحسابات الإدارة المعتمدة.
+    <div id="login-ui" style="text-align:center; max-width:400px; margin:20vh auto;" class="card">
+        <h2 style="color: #3b82f6;">بوابة الإدارة المركزية 👑</h2>
+        <button onclick="signInWithGoogle()" class="action-btn" style="margin-top: 20px;">تسجيل الدخول بـ Google</button>
+    </div>
+
+    <div id="dashboard-ui" class="container" style="display: none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="color: #10b981; margin:0;">MedQuiz Staging Admin</h2>
+            <button onclick="auth.signOut()" style="width:auto; background:transparent; border:1px solid #ef4444; color:#ef4444; padding:8px 15px; border-radius:8px; cursor:pointer;">تسجيل خروج</button>
+        </div>
+
+        <div class="nav-tabs">
+            <button class="tab-btn active" onclick="switchTab('upload')">📤 رفع المحاضرات</button>
+            <button class="tab-btn" onclick="switchTab('drafts')">📝 مراجعة التعديلات</button>
+            <button class="tab-btn" onclick="switchTab('reviewers')">👥 إدارة المراجعين</button>
+        </div>
+
+        <!-- 1. رفع المحاضرات -->
+        <div id="tab-upload" class="tab-content active card">
+            <h3 style="color:#60a5fa; margin-top:0;">الماكينة السريعة لرفع الـ MCQ</h3>
+            <p style="font-size:0.9rem; color:#94a3b8;">Format: Title \n Part | Question | O1 | O2 | O3 | O4 | CorrectNum(1-4) | Exp</p>
+            
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                    <label>السنة الدراسية:</label>
+                    <select id="up-year">
+                        <option value="الفرقة الأولى">الفرقة الأولى</option>
+                        <option value="الفرقة الثانية">الفرقة الثانية</option>
+                        <option value="الفرقة الثالثة">الفرقة الثالثة</option>
+                        <option value="الفرقة الرابعة">الفرقة الرابعة</option>
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <label>الموديول (اكتب إذا كان جديداً):</label>
+                    <input type="text" id="up-module" placeholder="مثال: CNS">
+                </div>
+                <div style="flex:1;">
+                    <label>المادة (اختياري):</label>
+                    <input type="text" id="up-subject" placeholder="مثال: Anatomy">
+                </div>
+            </div>
+
+            <textarea id="up-data" rows="8" placeholder="Cardiology Lec 1\nIntro | What is heart? | A | B | C | D | 1 | Explanation" style="direction:ltr;"></textarea>
+            
+            <div style="display:flex; gap:10px; align-items:center;">
+                <input type="text" id="up-id" placeholder="ID المحاضرة (اضغط توليد)" style="flex:2; margin:0;">
+                <button onclick="document.getElementById('up-id').value = Math.random().toString(36).substring(2,8).toUpperCase()" class="action-btn" style="flex:1; margin:0; background:#475569;">🎲 توليد ID</button>
+            </div>
+            
+            <button onclick="uploadLecture()" class="action-btn success-btn" style="margin-top:15px;">رفع وحفظ المحاضرة 🚀</button>
+        </div>
+
+        <!-- 2. مراجعة التعديلات -->
+        <div id="tab-drafts" class="tab-content card">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                <h3 style="color:#f59e0b; margin:0;">تعديلات في انتظار الموافقة</h3>
+                <button onclick="loadDrafts()" style="width:auto; padding:8px 15px;" class="action-btn">تحديث 🔄</button>
+            </div>
+            <div id="drafts-feed"></div>
+        </div>
+
+        <!-- 3. إدارة المراجعين -->
+        <div id="tab-reviewers" class="tab-content card">
+            <h3 style="color:#10b981; margin-top:0;">إضافة مراجع جديد</h3>
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="rev-name" placeholder="اسم المراجع" style="flex:2; margin:0;">
+                <select id="rev-year" style="flex:1; margin:0;">
+                    <option value="الفرقة الأولى">الفرقة الأولى</option>
+                    <option value="الفرقة الثانية">الفرقة الثانية</option>
+                    <option value="الفرقة الثالثة">الفرقة الثالثة</option>
+                    <option value="الفرقة الرابعة">الفرقة الرابعة</option>
+                </select>
+                <button onclick="addReviewer()" class="action-btn success-btn" style="flex:1; margin:0;">إضافة</button>
+            </div>
+
+            <h3 style="color:#60a5fa; margin-top:30px; border-top:1px solid #334155; padding-top:20px;">قائمة المراجعين</h3>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr><th>الاسم</th><th>الـ ID (كلمة السر)</th><th>السنة</th><th>التعديلات</th><th>وقت العمل</th><th>حذف الجهاز</th></tr></thead>
+                    <tbody id="reviewers-table"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- شاشة لوحة التحكم (ستظهر فقط بعد الدخول الناجح) -->
-    <div id="dashboard-ui">
-        <h1 style="color: #10b981;">أهلاً بك يا دكتور في لوحة التحكم المركزية! ✅</h1>
-        <p>تم التحقق من هويتك بنجاح.</p>
-        <button onclick="logoutAdmin()" style="background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-weight: bold;">تسجيل الخروج</button>
-        
-        <!-- في الخطوة القادمة سنبني هنا شاشة الإحصائيات وإدارة المراجعين -->
-    </div>
-
     <script>
-        // إعدادات مشروعك الجديد
         const firebaseConfig = {
             apiKey: "AIzaSyBMLTsWzlsIDmu7tLwZPafMo-hb4rJagIQ",
             authDomain: "medquiz-reviewer.firebaseapp.com",
@@ -54,49 +127,164 @@
             messagingSenderId: "262570274518",
             appId: "1:262570274518:web:636e1f568673dd3cdca377"
         };
-
-        // تهيئة Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
         const provider = new firebase.auth.GoogleAuthProvider();
 
-        // قائمة الإيميلات المصرح لها
-        const allowedEmails = [
-            "mahmoud01030382018@gmail.com",
-            "ma7moud01030382018@gmail.com",
-            "mahmoud01281288817@gmail.com",
-            "ma7moud01281288817@gmail.com"
-        ];
+        const allowedEmails = ["mahmoud01030382018@gmail.com", "ma7moud01030382018@gmail.com", "mahmoud01281288817@gmail.com", "ma7moud01281288817@gmail.com"];
 
-        // مراقبة حالة تسجيل الدخول
         auth.onAuthStateChanged((user) => {
-            if (user) {
-                // التحقق من أن الإيميل موجود في القائمة
-                if (allowedEmails.includes(user.email)) {
-                    document.getElementById('login-ui').style.display = 'none';
-                    document.getElementById('dashboard-ui').style.display = 'block';
-                } else {
-                    alert("🚫 عذراً، هذا الحساب غير مصرح له بدخول لوحة الإدارة.");
-                    auth.signOut(); // طرد فوري
-                }
-            } else {
-                document.getElementById('login-ui').style.display = 'block';
-                document.getElementById('dashboard-ui').style.display = 'none';
-            }
+            if (user && allowedEmails.includes(user.email)) {
+                document.getElementById('login-ui').style.display = 'none';
+                document.getElementById('dashboard-ui').style.display = 'block';
+                loadReviewers();
+                loadDrafts();
+            } else if (user) { alert("غير مصرح لك."); auth.signOut(); }
+            else { document.getElementById('login-ui').style.display = 'block'; document.getElementById('dashboard-ui').style.display = 'none'; }
         });
 
-        // دالة تسجيل الدخول
-        function signInWithGoogle() {
-            auth.signInWithPopup(provider).catch((error) => {
-                console.error("Login Error:", error);
-                alert("حدث خطأ أثناء تسجيل الدخول!");
+        function signInWithGoogle() { auth.signInWithPopup(provider); }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // ================= الماكينة الشاملة للرفع =================
+        async function uploadLecture() {
+            const year = document.getElementById('up-year').value;
+            const module = document.getElementById('up-module').value.trim();
+            const subject = document.getElementById('up-subject').value.trim();
+            const text = document.getElementById('up-data').value.trim();
+            const lecId = document.getElementById('up-id').value.trim();
+
+            if (!module || !text || !lecId) return alert('أكمل الخانات الأساسية (الموديول، البيانات، والـ ID)');
+
+            const lines = text.split(/\r?\n/);
+            const title = lines[0].trim();
+            let questions = [];
+
+            for(let i=1; i<lines.length; i++) {
+                const line = lines[i].trim();
+                if(!line) continue;
+                const p = line.split('|').map(x => x.trim());
+                if (p.length >= 7) {
+                    const correctNum = parseInt(p[6]);
+                    let exp = p[7] || "";
+                    let source = p[8] || "";
+                    if(source) exp += `<br><b>المصدر:</b> ${source}`;
+                    
+                    questions.push({ p: p[0], q: p[1], options: [p[2], p[3], p[4], p[5]], a: [p[2], p[3], p[4], p[5]][correctNum - 1], d: exp });
+                }
+            }
+
+            try {
+                await db.collection('lectures').doc(lecId).set({
+                    title: title, year: year, module: module, subject: subject,
+                    questions: questions, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert(`✅ تم الرفع بنجاح! الرابط للمراجع:\nreviewer.html?lec=${lecId}`);
+                document.getElementById('up-data').value = '';
+            } catch (e) { alert("❌ خطأ: " + e.message); }
+        }
+
+        // ================= إدارة المراجعين =================
+        async function addReviewer() {
+            const name = document.getElementById('rev-name').value.trim();
+            const year = document.getElementById('rev-year').value;
+            if(!name) return;
+            const newId = 'Rev' + Math.floor(Math.random() * 9000 + 1000); // Rev1234
+            await db.collection('reviewers').doc(newId).set({ name: name, year: year, edits_submitted: 0, time_spent_minutes: 0, device_id: null });
+            document.getElementById('rev-name').value = ''; loadReviewers();
+        }
+
+        function loadReviewers() {
+            db.collection('reviewers').get().then(snap => {
+                let html = '';
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    html += `<tr><td>${d.name}</td><td style="color:#f59e0b; font-family:monospace; font-weight:bold;">${doc.id}</td><td>${d.year || '-'}</td><td>${d.edits_submitted || 0}</td><td>${d.time_spent_minutes || 0} دقيقة</td><td>${d.device_id ? `<button onclick="resetDevice('${doc.id}')" class="action-btn danger-btn" style="padding:5px;">مسح الجهاز</button>` : 'غير مسجل'}</td></tr>`;
+                });
+                document.getElementById('reviewers-table').innerHTML = html;
             });
         }
 
-        // دالة تسجيل الخروج
-        function logoutAdmin() {
-            auth.signOut();
+        async function resetDevice(id) {
+            if(confirm("هل أنت متأكد من مسح الجهاز لهذا المراجع ليتمكن من الدخول من جهاز آخر؟")) {
+                await db.collection('reviewers').doc(id).update({ device_id: null }); loadReviewers();
+            }
+        }
+
+        // ================= مراجعة التعديلات (Drafts) =================
+        function loadDrafts() {
+            document.getElementById('drafts-feed').innerHTML = '<p>جاري التحميل...</p>';
+            db.collection('question_drafts').get().then(snap => {
+                let html = '';
+                if(snap.empty) { document.getElementById('drafts-feed').innerHTML = '<p style="color:#10b981; text-align:center;">لا توجد تعديلات معلقة! 🎉</p>'; return; }
+                
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    html += `
+                        <div class="draft-box">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                                <b style="color:#f59e0b;">بواسطة: ${d.reviewer_name} (محاضرة: ${d.lecture_id})</b>
+                                <span style="font-size:0.85rem; color:#94a3b8;">رقم السؤال: ${d.question_index + 1}</span>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; margin-bottom:15px;">
+                                <span style="color:#fca5a5;">السبب:</span> ${d.reason || 'لم يكتب سبب'}
+                            </div>
+                            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                                <div style="flex:1; background:#020617; padding:15px; border-radius:10px; direction:ltr; text-align:left;">
+                                    <h4 style="color:#ef4444; margin-top:0;">الأصلي (القديم)</h4>
+                                    <b>Q:</b> ${d.original_q}<br><b>A:</b> ${d.original_ans}
+                                </div>
+                                <div style="flex:1; background:#020617; padding:15px; border-radius:10px; direction:ltr; text-align:left;">
+                                    <h4 style="color:#10b981; margin-top:0;">التعديل المقترح</h4>
+                                    <b>Q:</b> ${d.new_q}<br><b>A:</b> ${d.new_ans}
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button class="action-btn success-btn" onclick="approveDraft('${doc.id}', '${d.lecture_id}', ${d.question_index})">✅ اعتماد التعديل</button>
+                                <button class="action-btn danger-btn" onclick="deleteDraft('${doc.id}')">❌ رفض وحذف</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                document.getElementById('drafts-feed').innerHTML = html;
+            });
+        }
+
+        async function deleteDraft(draftId) {
+            if(confirm("رفض التعديل وحذفه نهائياً؟")) { await db.collection('question_drafts').doc(draftId).delete(); loadDrafts(); }
+        }
+
+        async function approveDraft(draftId, lecId, qIndex) {
+            if(!confirm("سيتم استبدال السؤال القديم بهذا التعديل، متأكد؟")) return;
+            
+            try {
+                // سحب التعديل والمحاضرة الأصلية
+                const draftDoc = await db.collection('question_drafts').doc(draftId).get();
+                const lecDoc = await db.collection('lectures').doc(lecId).get();
+                
+                const d = draftDoc.data();
+                let qs = lecDoc.data().questions;
+                
+                // استبدال السؤال
+                qs[qIndex].q = d.new_q;
+                qs[qIndex].options = d.new_options;
+                qs[qIndex].a = d.new_ans;
+                qs[qIndex].d = d.new_exp;
+
+                // تحديث المحاضرة ثم حذف المسودة
+                await db.collection('lectures').doc(lecId).update({ questions: qs });
+                await db.collection('question_drafts').doc(draftId).delete();
+                
+                alert("✅ تم اعتماد التعديل بنجاح والمحاضرة اتحدثت!");
+                loadDrafts();
+            } catch(e) { alert("❌ خطأ: " + e.message); }
         }
     </script>
 </body>
